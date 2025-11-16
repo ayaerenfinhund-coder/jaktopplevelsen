@@ -330,12 +330,12 @@ export default function HuntDetail() {
         </div>
       )}
 
-      {/* Kart - mindre standard størrelse */}
+      {/* Kart */}
       <div className="bg-background-lighter rounded-xl overflow-hidden">
         <HuntMap
           tracks={tracks}
           center={hunt.location.coordinates}
-          initialHeight="small"
+          initialHeight="medium"
         />
       </div>
 
