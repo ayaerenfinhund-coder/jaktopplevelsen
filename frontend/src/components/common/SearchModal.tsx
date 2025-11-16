@@ -21,22 +21,22 @@ const mockResults: SearchResult[] = [
   {
     id: '1',
     type: 'hunt',
-    title: 'Morning Hunt at Østmarka',
-    subtitle: 'October 15, 2024 • 3 dogs',
+    title: 'Morgenjakt ved Semsvannet',
+    subtitle: '10. november 2024 • 1 hund',
     icon: Calendar,
   },
   {
     id: '2',
     type: 'dog',
-    title: 'Rex',
-    subtitle: 'Norwegian Elkhound • Active',
+    title: 'Rolex',
+    subtitle: 'Dachs • Aktiv',
     icon: Dog,
   },
   {
     id: '3',
     type: 'location',
-    title: 'Nordmarka Forest',
-    subtitle: '12 hunts • 45 km total',
+    title: 'Semsvannet',
+    subtitle: '24 jaktturer • 156 km totalt',
     icon: MapPin,
   },
 ];
@@ -135,13 +135,13 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
               type="text"
               value={query}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search hunts, dogs, locations..."
+              placeholder="Søk etter jaktturer, hunder, steder..."
               className="flex-1 bg-transparent text-text-primary placeholder-text-muted focus:outline-none text-lg"
             />
             <button
               onClick={onClose}
               className="btn-ghost btn-icon-sm"
-              aria-label="Close search"
+              aria-label="Lukk søk"
             >
               <X className="w-5 h-5" />
             </button>
@@ -152,14 +152,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             {query.length === 0 ? (
               <div className="p-8 text-center text-text-muted">
                 <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Start typing to search...</p>
+                <p>Begynn å skrive for å søke...</p>
                 <p className="text-sm mt-2">
-                  Search for hunts, dogs, or locations
+                  Søk etter jaktturer, hunder eller steder
                 </p>
               </div>
             ) : results.length === 0 ? (
               <div className="p-8 text-center text-text-muted">
-                <p>No results found for "{query}"</p>
+                <p>Ingen resultater funnet for "{query}"</p>
               </div>
             ) : (
               <ul className="p-2">
@@ -187,7 +187,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         </div>
                       </div>
                       <span className="badge-secondary text-xs">
-                        {result.type}
+                        {result.type === 'hunt' ? 'jakttur' : result.type === 'dog' ? 'hund' : 'sted'}
                       </span>
                     </button>
                   </li>
@@ -200,15 +200,15 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <div className="p-3 border-t border-background-lighter bg-background text-xs text-text-muted flex items-center gap-4">
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-background-lighter rounded">↑↓</kbd>
-              to navigate
+              naviger
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-background-lighter rounded">↵</kbd>
-              to select
+              velg
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-background-lighter rounded">esc</kbd>
-              to close
+              lukk
             </span>
           </div>
         </div>

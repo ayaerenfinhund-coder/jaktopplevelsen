@@ -18,21 +18,21 @@ interface SidebarProps {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Dogs', href: '/dogs', icon: Dog },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Oversikt', href: '/', icon: Home },
+  { name: 'Hunder', href: '/dogs', icon: Dog },
+  { name: 'Innstillinger', href: '/settings', icon: Settings },
 ];
 
 const quickFilters = [
-  { name: 'This Season', icon: Calendar, count: 12 },
-  { name: 'Favorites', icon: Heart, count: 5 },
-  { name: 'With Photos', icon: MapPin, count: 18 },
+  { name: 'Denne sesongen', icon: Calendar, count: 8 },
+  { name: 'Favoritter', icon: Heart, count: 3 },
+  { name: 'Med bilder', icon: MapPin, count: 12 },
 ];
 
 const stats = [
-  { name: 'Total Hunts', value: '47' },
-  { name: 'Total Distance', value: '324 km' },
-  { name: 'Active Dogs', value: '3' },
+  { name: 'Totalt jaktturer', value: '24' },
+  { name: 'Total distanse', value: '156 km' },
+  { name: 'Aktive hunder', value: '1' },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -55,11 +55,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Mobile close button */}
         <div className="lg:hidden flex items-center justify-between p-4 border-b border-background-lighter">
-          <span className="text-lg font-semibold">Menu</span>
+          <span className="text-lg font-semibold">Meny</span>
           <button
             onClick={onClose}
             className="btn-ghost btn-icon-sm"
-            aria-label="Close menu"
+            aria-label="Lukk meny"
           >
             <X className="w-5 h-5" />
           </button>
@@ -69,7 +69,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Main navigation */}
           <nav className="p-4">
             <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-              Navigation
+              Navigasjon
             </h3>
             <ul className="space-y-1">
               {navigation.map((item) => (
@@ -97,7 +97,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Quick filters */}
           <div className="p-4 border-t border-background-lighter">
             <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-              Quick Filters
+              Hurtigfiltre
             </h3>
             <ul className="space-y-1">
               {quickFilters.map((filter) => (
@@ -117,7 +117,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Statistics */}
           <div className="p-4 border-t border-background-lighter">
             <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-              Statistics
+              Statistikk
             </h3>
             <div className="space-y-3">
               {stats.map((stat) => (
@@ -135,7 +135,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="p-4 border-t border-background-lighter">
             <button className="w-full btn-outline btn-sm">
               <Download className="w-4 h-4 mr-2" />
-              Export Data
+              Eksporter data
             </button>
           </div>
         </div>

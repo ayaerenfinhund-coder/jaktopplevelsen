@@ -33,7 +33,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             <button
               onClick={onMenuClick}
               className="lg:hidden btn-ghost btn-icon"
-              aria-label="Open menu"
+              aria-label="Åpne meny"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -65,7 +65,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
               className="w-full flex items-center gap-3 px-4 py-2.5 bg-background border border-background-lighter rounded-lg text-text-muted hover:border-primary-700/50 transition-colors"
             >
               <Search className="w-5 h-5" />
-              <span>Search hunts, dogs, locations...</span>
+              <span>Søk etter jaktturer, hunder, steder...</span>
               <kbd className="ml-auto hidden lg:inline-flex items-center gap-1 px-2 py-1 bg-background-lighter rounded text-xs font-mono">
                 ⌘K
               </kbd>
@@ -77,7 +77,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             <button
               onClick={() => setSearchOpen(true)}
               className="md:hidden btn-ghost btn-icon"
-              aria-label="Search"
+              aria-label="Søk"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -85,8 +85,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             <button
               onClick={handleSync}
               className={`btn-ghost btn-icon ${isSyncing ? 'animate-spin' : ''}`}
-              aria-label="Sync with Garmin"
-              title="Sync with Garmin"
+              aria-label="Synkroniser med Garmin"
+              title="Synkroniser med Garmin"
             >
               <RefreshCw className="w-5 h-5" />
             </button>
@@ -96,20 +96,20 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
               className="btn-primary btn-sm hidden sm:inline-flex"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Hunt
+              Ny jakttur
             </Link>
 
             <Link
               to="/hunt/new"
               className="sm:hidden btn-primary btn-icon"
-              aria-label="New hunt"
+              aria-label="Ny jakttur"
             >
               <Plus className="w-5 h-5" />
             </Link>
 
             <button
               className="btn-ghost btn-icon relative"
-              aria-label="Notifications"
+              aria-label="Varsler"
             >
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-accent-500 rounded-full" />
@@ -118,7 +118,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             <Link
               to="/settings"
               className="btn-ghost btn-icon"
-              aria-label="User settings"
+              aria-label="Brukerinnstillinger"
             >
               <User className="w-5 h-5" />
             </Link>
