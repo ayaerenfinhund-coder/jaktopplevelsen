@@ -78,13 +78,6 @@ const MAP_LAYERS = {
     attribution: '© <a href="https://kartverket.no">Kartverket</a>',
     maxZoom: 18,
   },
-  // Norges grunnkart - detaljert gråtone
-  grunnkart: {
-    name: 'Grunnkart (Gråtone)',
-    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/norges_grunnkart_graatone/default/webmercator/{z}/{y}/{x}.png',
-    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
-    maxZoom: 20,
-  },
   // Flyfoto - ESRI World Imagery (fungerer uten API-nøkkel)
   flyfoto: {
     name: 'Flyfoto',
@@ -182,14 +175,6 @@ export default function HuntMap({
               url={MAP_LAYERS.toporaster.url}
               attribution={MAP_LAYERS.toporaster.attribution}
               maxZoom={MAP_LAYERS.toporaster.maxZoom}
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.grunnkart.name}>
-            <TileLayer
-              url={MAP_LAYERS.grunnkart.url}
-              attribution={MAP_LAYERS.grunnkart.attribution}
-              maxZoom={MAP_LAYERS.grunnkart.maxZoom}
             />
           </LayersControl.BaseLayer>
 

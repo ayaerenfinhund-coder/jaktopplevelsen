@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import Modal from '../components/common/Modal';
 import toast from 'react-hot-toast';
 import { fetchWeatherFromYr } from '../services/weatherService';
 import type { Hunt } from '../types';
@@ -238,6 +239,9 @@ export default function Dashboard() {
   // Bilder
   const [photos, setPhotos] = useState<string[]>([]);
 
+  // Vilt-modal
+  const [showGameModal, setShowGameModal] = useState(false);
+
   // Get available seasons from hunts
   const availableSeasons = Array.from(
     new Set(hunts.map((h) => getHuntingSeason(h.date)))
@@ -246,18 +250,22 @@ export default function Dashboard() {
   // Hent vær automatisk når sted velges (med geokoding for egendefinerte steder)
   useEffect(() => {
     const fetchWeather = async () => {
-      const loc = selectedLocation || customLocation;
-      if (!loc || loc === '_custom') return;
+      // Bruk customLocation hvis vi er i custom-modus, ellers selectedLocation
+      const loc = selectedLocation === '_custom' ? customLocation : selectedLocation;
+      if (!loc || loc.length < 2) {
+        setWeather(null);
+        return;
+      }
 
       // Sjekk om vi har koordinater for dette stedet
       let coords = locationCoords[loc];
 
       // Hvis ikke, prøv å geokode stedsnavnet
-      if (!coords && customLocation && customLocation.length > 2) {
+      if (!coords && loc.length > 2) {
         setIsLoadingWeather(true);
         try {
           // Bruk Kartverket stedsnavn-API for å finne koordinater
-          const searchUrl = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodeURIComponent(customLocation)}&maxAnt=1&filtrer=navn`;
+          const searchUrl = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodeURIComponent(loc)}&maxAnt=1&filtrer=navn`;
           const searchResp = await fetch(searchUrl);
           if (searchResp.ok) {
             const searchData = await searchResp.json();
@@ -297,7 +305,7 @@ export default function Dashboard() {
     };
 
     // Debounce for customLocation
-    const timer = setTimeout(fetchWeather, customLocation ? 500 : 0);
+    const timer = setTimeout(fetchWeather, selectedLocation === '_custom' ? 800 : 0);
     return () => clearTimeout(timer);
   }, [selectedLocation, customLocation]);
 
@@ -483,14 +491,25 @@ export default function Dashboard() {
           <div>
             <label className="text-xs text-text-muted mb-1 block">Sted</label>
             {selectedLocation === '_custom' ? (
-              <input
-                type="text"
-                value={customLocation}
-                onChange={(e) => setCustomLocation(e.target.value)}
-                placeholder="Skriv sted..."
-                className="input text-sm"
-                autoFocus
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={customLocation}
+                  onChange={(e) => setCustomLocation(e.target.value)}
+                  placeholder="Skriv stedsnavn..."
+                  className="input text-sm pr-8"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    setSelectedLocation('');
+                    setCustomLocation('');
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-xs"
+                >
+                  ✕
+                </button>
+              </div>
             ) : (
               <select
                 value={selectedLocation}
@@ -532,39 +551,31 @@ export default function Dashboard() {
           <div className="text-xs text-text-muted mb-4">Henter vær fra yr.no...</div>
         )}
 
-        {/* Observasjoner og Skutt - ultrakompakt */}
-        <div className="mb-4">
-          <div className="flex items-center gap-4 text-xs text-text-muted mb-2">
-            <span className="flex items-center gap-1">
-              <Eye className="w-3 h-3" /> Observert
-            </span>
-            <span className="flex items-center gap-1">
-              <Target className="w-3 h-3" /> Skutt
-            </span>
+        {/* Vilt - Premium knapp */}
+        <button
+          onClick={() => setShowGameModal(true)}
+          className="w-full mb-4 p-3 bg-background rounded-lg flex items-center justify-between hover:bg-background-lighter transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Target className="w-5 h-5 text-primary-400" />
+            <span className="text-sm font-medium text-text-primary">Vilt</span>
           </div>
-          <div className="flex flex-wrap gap-3">
-            {gameTypes.slice(0, 4).map((game) => (
-              <div key={game.id} className="flex items-center gap-2">
-                <span className="text-xs text-text-muted w-12">{game.name}</span>
-                <div className="flex items-center">
-                  <button
-                    onClick={() => updateGameCount(setGameSeen, game.id, 1)}
-                    className="text-xs text-primary-400 hover:text-primary-300 px-1"
-                  >
-                    +{gameSeen[game.id] || 0}
-                  </button>
-                  <span className="text-text-muted">/</span>
-                  <button
-                    onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
-                    className="text-xs text-success hover:text-green-400 px-1"
-                  >
-                    {gameHarvested[game.id] || 0}
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center gap-2">
+            {totalSeen > 0 && (
+              <span className="text-sm text-primary-400 font-medium">{totalSeen} observert</span>
+            )}
+            {totalSeen > 0 && totalHarvested > 0 && (
+              <span className="text-text-muted">•</span>
+            )}
+            {totalHarvested > 0 && (
+              <span className="text-sm text-success font-medium">{totalHarvested} felt</span>
+            )}
+            {totalSeen === 0 && totalHarvested === 0 && (
+              <span className="text-sm text-text-muted">Legg til</span>
+            )}
+            <ChevronRight className="w-4 h-4 text-text-muted" />
           </div>
-        </div>
+        </button>
 
         {/* Notater */}
         <textarea
@@ -692,7 +703,7 @@ export default function Dashboard() {
 
       {/* Sesong og statistikk - egen synlig boks */}
       <div className="p-4 bg-background-lighter/30 rounded-xl">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <button
             onClick={() => navigateSeason('prev')}
             disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1}
@@ -723,36 +734,13 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Statistikk per sted */}
-        <div className="pt-3 border-t border-background-lighter">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-text-primary">Per sted</h3>
-            <button
-              onClick={() => navigate('/statistics')}
-              className="text-xs text-primary-400 hover:text-primary-300"
-            >
-              Hundestatistikk →
-            </button>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {recentLocations.map((loc) => {
-              const locHunts = filteredHunts.filter((h) => h.location.name === loc);
-              const locSeen = locHunts.reduce((acc, h) => acc + h.game_seen.reduce((a, g) => a + g.count, 0), 0);
-              const locHarvested = locHunts.reduce((acc, h) => acc + h.game_harvested.reduce((a, g) => a + g.count, 0), 0);
-              return (
-                <button
-                  key={loc}
-                  onClick={() => setSearchQuery(loc)}
-                  className="text-left p-3 rounded-lg bg-background/50 hover:bg-background transition-colors"
-                >
-                  <div className="text-sm font-medium text-text-primary truncate">{loc}</div>
-                  <div className="text-xs text-text-muted mt-1">
-                    {locHunts.length} turer • {locSeen}s • {locHarvested}f
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+        <div className="text-center">
+          <button
+            onClick={() => navigate('/statistics')}
+            className="text-xs text-primary-400 hover:text-primary-300"
+          >
+            Se hundestatistikk →
+          </button>
         </div>
       </div>
 
@@ -836,6 +824,83 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Vilt-modal */}
+      <Modal
+        isOpen={showGameModal}
+        onClose={() => setShowGameModal(false)}
+        title="Vilt observert og felt"
+        size="lg"
+      >
+        <div className="space-y-4">
+          {gameTypes.map((game) => {
+            const seen = gameSeen[game.id] || 0;
+            const harvested = gameHarvested[game.id] || 0;
+            return (
+              <div key={game.id} className="flex items-center justify-between p-3 bg-background rounded-lg">
+                <span className="text-sm font-medium text-text-primary">{game.name}</span>
+                <div className="flex items-center gap-4">
+                  {/* Observert */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-muted">Sett</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => updateGameCount(setGameSeen, game.id, -1)}
+                        className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:text-text-primary flex items-center justify-center text-sm"
+                      >
+                        -
+                      </button>
+                      <span className="w-8 text-center text-sm font-medium text-primary-400">
+                        {seen}
+                      </span>
+                      <button
+                        onClick={() => updateGameCount(setGameSeen, game.id, 1)}
+                        className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:text-text-primary flex items-center justify-center text-sm"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  {/* Felt */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-muted">Felt</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
+                        className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:text-text-primary flex items-center justify-center text-sm"
+                      >
+                        -
+                      </button>
+                      <span className="w-8 text-center text-sm font-medium text-success">
+                        {harvested}
+                      </span>
+                      <button
+                        onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
+                        className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:text-text-primary flex items-center justify-center text-sm"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-6 flex justify-between items-center">
+          <div className="text-sm text-text-muted">
+            {totalSeen > 0 && <span className="text-primary-400 font-medium">{totalSeen} observert</span>}
+            {totalSeen > 0 && totalHarvested > 0 && <span className="mx-2">•</span>}
+            {totalHarvested > 0 && <span className="text-success font-medium">{totalHarvested} felt</span>}
+          </div>
+          <button
+            onClick={() => setShowGameModal(false)}
+            className="px-4 py-2 bg-primary-700/80 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            Ferdig
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
