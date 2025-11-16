@@ -150,7 +150,7 @@ export default function Dashboard() {
     return localStorage.getItem('lastDog') || mockDogs[0]?.id || '';
   });
   const [selectedLocation, setSelectedLocation] = useState(() => {
-    return localStorage.getItem('lastLocation') || '';
+    return localStorage.getItem('lastLocation') || recentLocations[0] || '';
   });
   const [customLocation, setCustomLocation] = useState('');
 
