@@ -150,7 +150,12 @@ export default function Dashboard() {
     return localStorage.getItem('lastDog') || mockDogs[0]?.id || '';
   });
   const [selectedLocation, setSelectedLocation] = useState(() => {
-    return localStorage.getItem('lastLocation') || recentLocations[0] || '';
+    const saved = localStorage.getItem('lastLocation');
+    // Bruk lagret sted kun hvis det er i listen, ellers bruk Storeberg
+    if (saved && recentLocations.includes(saved)) {
+      return saved;
+    }
+    return recentLocations[0] || ''; // Storeberg som standard
   });
   const [customLocation, setCustomLocation] = useState('');
 
@@ -163,8 +168,18 @@ export default function Dashboard() {
   // Oppdater localStorage når valg endres
   useEffect(() => {
     if (selectedDog) localStorage.setItem('lastDog', selectedDog);
-    if (selectedLocation) localStorage.setItem('lastLocation', selectedLocation);
+    if (selectedLocation && selectedLocation !== '_custom') {
+      localStorage.setItem('lastLocation', selectedLocation);
+    }
   }, [selectedDog, selectedLocation]);
+
+  // Rens opp ugyldig localStorage ved oppstart
+  useEffect(() => {
+    const saved = localStorage.getItem('lastLocation');
+    if (saved && !recentLocations.includes(saved)) {
+      localStorage.removeItem('lastLocation');
+    }
+  }, []);
 
   const currentDogName = mockDogs.find((d) => d.id === selectedDog)?.name || 'Velg hund';
   const currentLocation = selectedLocation || customLocation || 'Velg sted';
