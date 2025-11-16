@@ -128,9 +128,10 @@ export default function HuntDetail() {
   const [tracks, setTracks] = useState<Track[]>(mockTracks);
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'map' | 'photos' | 'notes'>('map');
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackTime, setPlaybackTime] = useState(0);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesText, setNotesText] = useState(mockHunt.notes);
 
   const gameTypeLabels: Record<string, string> = {
     moose: 'Elg',
@@ -323,139 +324,155 @@ export default function HuntDetail() {
         </div>
       </div>
 
-      {/* Faner */}
-      <div className="card overflow-hidden">
-        <div className="flex border-b border-background-lighter">
-          <button
-            onClick={() => setActiveTab('map')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'map'
-                ? 'text-primary-400 border-b-2 border-primary-500'
-                : 'text-text-muted hover:text-text-secondary'
-            }`}
-          >
-            Kart og spor
-          </button>
-          <button
-            onClick={() => setActiveTab('photos')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'photos'
-                ? 'text-primary-400 border-b-2 border-primary-500'
-                : 'text-text-muted hover:text-text-secondary'
-            }`}
-          >
-            Bilder ({hunt.photos.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('notes')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'notes'
-                ? 'text-primary-400 border-b-2 border-primary-500'
-                : 'text-text-muted hover:text-text-secondary'
-            }`}
-          >
-            Notater
-          </button>
+      {/* Kart og spor */}
+      <div className="space-y-6">
+        <div className="h-[70vh] min-h-[500px] bg-background-lighter rounded-xl overflow-hidden shadow-inner-lg">
+          <HuntMap tracks={tracks} center={hunt.location.coordinates} />
         </div>
 
-        <div className="p-6">
-          {activeTab === 'map' && (
-            <div className="space-y-6">
-              {/* Kart - mye større */}
-              <div className="h-[70vh] min-h-[500px] bg-background-lighter rounded-xl overflow-hidden shadow-inner-lg">
-                <HuntMap tracks={tracks} center={hunt.location.coordinates} />
-              </div>
+        {/* Tidslinje-kontroller */}
+        <div className="flex items-center gap-4 bg-background-light p-4 rounded-xl">
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            className="btn-primary btn-icon-lg"
+          >
+            {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+          </button>
+          <button
+            onClick={() => setPlaybackTime(0)}
+            className="btn-ghost btn-icon"
+          >
+            <RotateCcw className="w-5 h-5" />
+          </button>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={playbackTime}
+            onChange={(e) => setPlaybackTime(Number(e.target.value))}
+            className="timeline-slider flex-1"
+          />
+          <span className="text-sm font-medium text-text-secondary w-20 text-right">
+            {Math.round(playbackTime)}%
+          </span>
+        </div>
 
-              {/* Tidslinje-kontroller */}
-              <div className="flex items-center gap-4 bg-background p-4 rounded-xl">
-                <button
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="btn-primary btn-icon-lg"
-                >
-                  {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                </button>
-                <button
-                  onClick={() => setPlaybackTime(0)}
-                  className="btn-ghost btn-icon"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={playbackTime}
-                  onChange={(e) => setPlaybackTime(Number(e.target.value))}
-                  className="timeline-slider flex-1"
+        {/* Sporstatistikk */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {tracks.map((track) => (
+            <div key={track.id} className="p-4 bg-background-light rounded-xl border border-background-lighter">
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-4 h-4 rounded-full shadow-glow"
+                  style={{ backgroundColor: track.color }}
                 />
-                <span className="text-sm font-medium text-text-secondary w-20 text-right">
-                  {Math.round(playbackTime)}%
+                <span className="font-semibold text-text-primary">
+                  {track.name.split(' - ')[0]}
                 </span>
               </div>
-
-              {/* Sporstatistikk - forbedret design */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {tracks.map((track) => (
-                  <div key={track.id} className="p-4 bg-background rounded-xl border border-background-lighter">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div
-                        className="w-4 h-4 rounded-full shadow-glow"
-                        style={{ backgroundColor: track.color }}
-                      />
-                      <span className="font-semibold text-text-primary">
-                        {track.name.split(' - ')[0]}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <p className="text-text-muted text-xs">Distanse</p>
-                        <p className="text-text-primary font-medium">{track.statistics.distance_km} km</p>
-                      </div>
-                      <div>
-                        <p className="text-text-muted text-xs">Varighet</p>
-                        <p className="text-text-primary font-medium">{Math.round(track.statistics.duration_minutes)} min</p>
-                      </div>
-                      <div>
-                        <p className="text-text-muted text-xs">Høydemeter</p>
-                        <p className="text-text-primary font-medium">↑{track.statistics.elevation_gain_m}m</p>
-                      </div>
-                      <div>
-                        <p className="text-text-muted text-xs">Maks fart</p>
-                        <p className="text-text-primary font-medium">{track.statistics.max_speed_kmh} km/t</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-text-muted text-xs">Distanse</p>
+                  <p className="text-text-primary font-medium">{track.statistics.distance_km} km</p>
+                </div>
+                <div>
+                  <p className="text-text-muted text-xs">Varighet</p>
+                  <p className="text-text-primary font-medium">{Math.round(track.statistics.duration_minutes)} min</p>
+                </div>
+                <div>
+                  <p className="text-text-muted text-xs">Høydemeter</p>
+                  <p className="text-text-primary font-medium">↑{track.statistics.elevation_gain_m}m</p>
+                </div>
+                <div>
+                  <p className="text-text-muted text-xs">Maks fart</p>
+                  <p className="text-text-primary font-medium">{track.statistics.max_speed_kmh} km/t</p>
+                </div>
               </div>
             </div>
-          )}
+          ))}
+        </div>
+      </div>
 
-          {activeTab === 'photos' && (
-            <div>
-              {hunt.photos.length > 0 ? (
-                <PhotoGallery photos={hunt.photos} />
-              ) : (
-                <div className="text-center py-12">
-                  <Camera className="w-12 h-12 mx-auto text-text-muted mb-4" />
-                  <p className="text-text-muted">Ingen bilder lagt til</p>
-                  <Button variant="outline" size="sm" className="mt-4">
-                    Legg til bilder
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'notes' && (
-            <div className="prose prose-invert max-w-none">
-              {hunt.notes ? (
-                <p className="text-text-secondary whitespace-pre-wrap">{hunt.notes}</p>
-              ) : (
-                <p className="text-text-muted italic">Ingen notater</p>
-              )}
+      {/* NOTATER - alltid synlig og lett redigerbar */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-text-primary text-lg">Notater</h3>
+          {!editingNotes ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<Edit3 className="w-4 h-4" />}
+              onClick={() => setEditingNotes(true)}
+            >
+              Rediger
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingNotes(false);
+                  setNotesText(hunt.notes);
+                }}
+              >
+                Avbryt
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  // Lagre notater
+                  setHunt({ ...hunt, notes: notesText });
+                  setEditingNotes(false);
+                }}
+              >
+                Lagre
+              </Button>
             </div>
           )}
         </div>
+        {editingNotes ? (
+          <textarea
+            value={notesText}
+            onChange={(e) => setNotesText(e.target.value)}
+            className="input min-h-[200px] w-full font-normal"
+            placeholder="Skriv dine notater her... Beskriv jakten, hundens arbeid, vær og andre detaljer."
+            autoFocus
+          />
+        ) : (
+          <div className="bg-background rounded-lg p-4 min-h-[100px]">
+            {hunt.notes ? (
+              <p className="text-text-secondary whitespace-pre-wrap leading-relaxed">
+                {hunt.notes}
+              </p>
+            ) : (
+              <p className="text-text-muted italic">
+                Ingen notater ennå. Klikk "Rediger" for å legge til.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Bilder */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-text-primary text-lg">
+            Bilder {hunt.photos.length > 0 && `(${hunt.photos.length})`}
+          </h3>
+          <Button variant="outline" size="sm" leftIcon={<Camera className="w-4 h-4" />}>
+            Legg til
+          </Button>
+        </div>
+        {hunt.photos.length > 0 ? (
+          <PhotoGallery photos={hunt.photos} />
+        ) : (
+          <div className="text-center py-8 bg-background rounded-lg">
+            <Camera className="w-10 h-10 mx-auto text-text-muted mb-3 opacity-50" />
+            <p className="text-text-muted text-sm">Ingen bilder lagt til</p>
+          </div>
+        )}
       </div>
 
       {/* Tagger */}

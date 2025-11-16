@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -11,11 +11,14 @@ import {
   Heart,
   MoreVertical,
   TrendingUp,
+  Edit3,
+  Send,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import toast from 'react-hot-toast';
 import type { Hunt } from '../types';
 
 // Mock-data for demonstrasjon
@@ -91,10 +94,31 @@ const stats = {
 };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [hunts, setHunts] = useState<Hunt[]>(mockHunts);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Hurtignotat
+  const [quickNote, setQuickNote] = useState('');
+  const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
+
+  const handleQuickSave = async () => {
+    if (!quickNote.trim()) return;
+    setIsSavingQuickNote(true);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      toast.success('Jakttur lagret!');
+      setQuickNote('');
+      // I virkeligheten ville vi oppdatere listen her
+    } catch (error) {
+      toast.error('Kunne ikke lagre');
+    } finally {
+      setIsSavingQuickNote(false);
+    }
+  };
 
   const filteredHunts = hunts.filter(
     (hunt) =>
@@ -117,6 +141,58 @@ export default function Dashboard() {
             Ny jakttur
           </Button>
         </Link>
+      </div>
+
+      {/* HURTIGNOTAT - rask logging */}
+      <div className="card p-6 bg-gradient-to-br from-primary-700/10 to-transparent border-primary-700/30">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-primary-700/30 rounded-lg flex items-center justify-center">
+            <Edit3 className="w-5 h-5 text-primary-400" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-text-primary">Hurtignotat</h2>
+            <p className="text-sm text-text-muted">
+              Logg dagens jakt med Rolex ved Semsvannet
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <textarea
+            value={quickNote}
+            onChange={(e) => setQuickNote(e.target.value)}
+            placeholder="Skriv om jakten i dag... Hvordan jobbet Rolex? Hva så dere? Hvordan var forholdene?"
+            className="input min-h-[120px] w-full font-normal resize-y"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                handleQuickSave();
+              }
+            }}
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-text-muted">
+              Trykk ⌘+Enter for å lagre raskt
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/hunt/new')}
+              >
+                Flere detaljer
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Send className="w-4 h-4" />}
+                onClick={handleQuickSave}
+                isLoading={isSavingQuickNote}
+                disabled={!quickNote.trim()}
+              >
+                Lagre
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Statistikk-kort */}

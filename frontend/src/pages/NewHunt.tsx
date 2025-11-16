@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Calendar,
-  Clock,
   MapPin,
   Dog,
-  Cloud,
+  ChevronDown,
+  ChevronUp,
   Plus,
   Trash2,
-  Upload,
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import toast from 'react-hot-toast';
@@ -18,72 +17,39 @@ const gameTypes = [
   { value: 'moose', label: 'Elg' },
   { value: 'deer', label: 'Hjort' },
   { value: 'roe_deer', label: 'Rådyr' },
-  { value: 'wild_boar', label: 'Villsvin' },
-  { value: 'fox', label: 'Rev' },
   { value: 'hare', label: 'Hare' },
   { value: 'grouse', label: 'Rype' },
-  { value: 'ptarmigan', label: 'Fjellrype' },
-  { value: 'capercaillie', label: 'Tiur' },
-  { value: 'black_grouse', label: 'Orrfugl' },
-  { value: 'duck', label: 'And' },
-  { value: 'goose', label: 'Gås' },
+  { value: 'fox', label: 'Rev' },
 ];
 
-const mockDogs = [
-  { id: 'rolex', name: 'Rolex', breed: 'Dachs' },
-];
+const mockDogs = [{ id: 'rolex', name: 'Rolex', breed: 'Dachs' }];
 
 interface GameObservation {
   type: string;
   count: number;
   time: string;
-  notes: string;
 }
 
 export default function NewHunt() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Skjemastate
-  const [title, setTitle] = useState('');
+  // Hovedfelt - enkelt og raskt
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [locationName, setLocationName] = useState('Semsvannet');
+  const [selectedDogs, setSelectedDogs] = useState<string[]>(['rolex']);
+  const [notes, setNotes] = useState('');
+
+  // Valgfrie detaljer (skjult som standard)
+  const [showDetails, setShowDetails] = useState(false);
+  const [title, setTitle] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [locationName, setLocationName] = useState('');
-  const [locationRegion, setLocationRegion] = useState('');
-  const [selectedGameTypes, setSelectedGameTypes] = useState<string[]>([]);
-  const [selectedDogs, setSelectedDogs] = useState<string[]>([]);
-  const [notes, setNotes] = useState('');
+  const [observations, setObservations] = useState<GameObservation[]>([]);
   const [tags, setTags] = useState('');
 
-  // Vær
-  const [temperature, setTemperature] = useState('');
-  const [windSpeed, setWindSpeed] = useState('');
-  const [windDirection, setWindDirection] = useState('');
-  const [conditions, setConditions] = useState('');
-
-  // Observasjoner
-  const [observations, setObservations] = useState<GameObservation[]>([]);
-
   const handleAddObservation = () => {
-    setObservations([
-      ...observations,
-      { type: '', count: 1, time: '', notes: '' },
-    ]);
-  };
-
-  const handleRemoveObservation = (index: number) => {
-    setObservations(observations.filter((_, i) => i !== index));
-  };
-
-  const handleObservationChange = (
-    index: number,
-    field: keyof GameObservation,
-    value: string | number
-  ) => {
-    const updated = [...observations];
-    updated[index] = { ...updated[index], [field]: value };
-    setObservations(updated);
+    setObservations([...observations, { type: '', count: 1, time: '' }]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,67 +57,27 @@ export default function NewHunt() {
     setIsSubmitting(true);
 
     try {
-      // Validering
-      if (!title.trim()) {
-        toast.error('Tittel er påkrevd');
-        return;
-      }
-      if (!locationName.trim()) {
-        toast.error('Sted er påkrevd');
-        return;
-      }
+      // Automatisk tittel hvis ikke satt
+      const finalTitle =
+        title.trim() ||
+        `Jakttur ${locationName} - ${new Date(date).toLocaleDateString('nb-NO')}`;
 
-      // Her ville vi sendt data til Firebase
-      const huntData = {
-        title,
-        date,
-        start_time: startTime,
-        end_time: endTime,
-        location: {
-          name: locationName,
-          region: locationRegion,
-          country: 'Norge',
-          coordinates: [60.0, 10.7], // Standard koordinater
-        },
-        weather:
-          temperature || windSpeed
-            ? {
-                temperature: Number(temperature),
-                humidity: 0,
-                wind_speed: Number(windSpeed),
-                wind_direction: windDirection,
-                precipitation: 'none',
-                conditions,
-              }
-            : null,
-        game_type: selectedGameTypes,
-        game_seen: observations,
-        game_harvested: [],
-        dogs: selectedDogs,
-        notes,
-        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
-        is_favorite: false,
-      };
+      // Simuler lagring
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      console.log('Oppretter jakttur:', huntData);
-
-      // Simuler API-kall
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast.success('Jakttur opprettet!');
+      toast.success('Jakttur lagret!');
       navigate('/');
     } catch (error) {
-      console.error('Feil ved opprettelse:', error);
-      toast.error('Kunne ikke opprette jakttur');
+      toast.error('Kunne ikke lagre jakttur');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate(-1)}
           className="btn-ghost btn-icon"
@@ -159,396 +85,231 @@ export default function NewHunt() {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-2xl font-bold text-text-primary">Ny jakttur</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Logg jakttur</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Grunnleggende informasjon */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">
-            Grunnleggende informasjon
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="input-label">Tittel *</label>
+        {/* Kjerne-info - alltid synlig */}
+        <div className="card p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Dato */}
+            <div>
+              <label className="input-label flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary-400" />
+                Dato
+              </label>
               <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="F.eks. Morgenjakt i Nordmarka"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
                 className="input"
                 required
               />
             </div>
 
+            {/* Sted */}
             <div>
-              <label className="input-label">Dato *</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="input pl-10"
-                  required
-                />
-              </div>
+              <label className="input-label flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary-400" />
+                Sted
+              </label>
+              <input
+                type="text"
+                value={locationName}
+                onChange={(e) => setLocationName(e.target.value)}
+                placeholder="F.eks. Semsvannet"
+                className="input"
+                required
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="input-label">Starttid *</label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+            {/* Hund */}
+            <div>
+              <label className="input-label flex items-center gap-2">
+                <Dog className="w-4 h-4 text-primary-400" />
+                Hund
+              </label>
+              <select
+                value={selectedDogs[0] || ''}
+                onChange={(e) => setSelectedDogs([e.target.value])}
+                className="select"
+              >
+                {mockDogs.map((dog) => (
+                  <option key={dog.id} value={dog.id}>
+                    {dog.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* NOTATER - hovedfokus, som en notatblokk */}
+        <div className="card p-6">
+          <label className="input-label text-lg mb-3">Notater</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Beskriv jaktturen...&#10;&#10;Hvordan jobbet hunden?&#10;Hva observerte du?&#10;Hvordan var forholdene?"
+            className="input min-h-[300px] w-full font-normal text-base leading-relaxed resize-y"
+            autoFocus
+          />
+          <p className="text-xs text-text-muted mt-2">
+            Skriv fritt - du kan alltid legge til mer informasjon senere
+          </p>
+        </div>
+
+        {/* Valgfrie detaljer - kan utvides */}
+        <div className="card overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            className="w-full flex items-center justify-between p-4 text-left hover:bg-background-lighter transition-colors"
+          >
+            <span className="font-medium text-text-primary">
+              Flere detaljer (valgfritt)
+            </span>
+            {showDetails ? (
+              <ChevronUp className="w-5 h-5 text-text-muted" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-text-muted" />
+            )}
+          </button>
+
+          {showDetails && (
+            <div className="p-6 pt-0 space-y-6 border-t border-background-lighter">
+              {/* Tittel og tid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-3">
+                  <label className="input-label">Tittel (genereres automatisk)</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="F.eks. Morgenjakt ved Semsvannet"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="input-label">Starttid</label>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="input pl-10"
-                    required
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="input-label">Sluttid</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="input"
                   />
                 </div>
               </div>
-              <div>
-                <label className="input-label">Sluttid</label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="input"
-                />
-              </div>
-            </div>
 
-            <div>
-              <label className="input-label">Sted *</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+              {/* Observasjoner */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="input-label mb-0">Vilt observert</label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    onClick={handleAddObservation}
+                  >
+                    Legg til
+                  </Button>
+                </div>
+                {observations.length === 0 ? (
+                  <p className="text-text-muted text-sm">
+                    Ingen observasjoner lagt til
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {observations.map((obs, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 bg-background p-3 rounded-lg"
+                      >
+                        <select
+                          value={obs.type}
+                          onChange={(e) => {
+                            const updated = [...observations];
+                            updated[index].type = e.target.value;
+                            setObservations(updated);
+                          }}
+                          className="select flex-1"
+                        >
+                          <option value="">Velg vilt</option>
+                          {gameTypes.map((type) => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          value={obs.count}
+                          onChange={(e) => {
+                            const updated = [...observations];
+                            updated[index].count = parseInt(e.target.value) || 1;
+                            setObservations(updated);
+                          }}
+                          min="1"
+                          className="input w-20"
+                        />
+                        <input
+                          type="time"
+                          value={obs.time}
+                          onChange={(e) => {
+                            const updated = [...observations];
+                            updated[index].time = e.target.value;
+                            setObservations(updated);
+                          }}
+                          className="input w-32"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setObservations(observations.filter((_, i) => i !== index))
+                          }
+                          className="btn-ghost btn-icon-sm text-error"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Tagger */}
+              <div>
+                <label className="input-label">Tagger</label>
                 <input
                   type="text"
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="F.eks. Nordmarka"
-                  className="input pl-10"
-                  required
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="morgenjakt, rådyr, fint vær"
+                  className="input"
                 />
+                <p className="input-helper">Separér med komma</p>
               </div>
-            </div>
-
-            <div>
-              <label className="input-label">Region</label>
-              <input
-                type="text"
-                value={locationRegion}
-                onChange={(e) => setLocationRegion(e.target.value)}
-                placeholder="F.eks. Viken"
-                className="input"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Vilttyper */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">
-            Vilttyper
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {gameTypes.map((type) => (
-              <button
-                key={type.value}
-                type="button"
-                onClick={() => {
-                  if (selectedGameTypes.includes(type.value)) {
-                    setSelectedGameTypes(selectedGameTypes.filter((t) => t !== type.value));
-                  } else {
-                    setSelectedGameTypes([...selectedGameTypes, type.value]);
-                  }
-                }}
-                className={`relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                  selectedGameTypes.includes(type.value)
-                    ? 'bg-primary-700/30 border-primary-500 shadow-glow scale-[1.02]'
-                    : 'border-background-lighter hover:border-primary-700/50 hover:bg-background-lighter'
-                }`}
-              >
-                {selectedGameTypes.includes(type.value) && (
-                  <div className="absolute top-2 right-2 w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                )}
-                <span className="text-text-primary font-medium">{type.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Hunder */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">
-            <Dog className="inline w-5 h-5 mr-2" />
-            Hunder
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {mockDogs.map((dog) => (
-              <button
-                key={dog.id}
-                type="button"
-                onClick={() => {
-                  if (selectedDogs.includes(dog.id)) {
-                    setSelectedDogs(selectedDogs.filter((d) => d !== dog.id));
-                  } else {
-                    setSelectedDogs([...selectedDogs, dog.id]);
-                  }
-                }}
-                className={`relative flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 text-left ${
-                  selectedDogs.includes(dog.id)
-                    ? 'bg-accent-500/20 border-accent-500 shadow-lg scale-[1.02]'
-                    : 'border-background-lighter hover:border-accent-500/50 hover:bg-background-lighter'
-                }`}
-              >
-                {selectedDogs.includes(dog.id) && (
-                  <div className="absolute top-2 right-2 w-6 h-6 bg-accent-500 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                )}
-                <div className="w-12 h-12 bg-accent-500/30 rounded-full flex items-center justify-center">
-                  <Dog className="w-6 h-6 text-accent-400" />
-                </div>
-                <div>
-                  <p className="text-text-primary font-semibold text-lg">{dog.name}</p>
-                  <p className="text-sm text-text-muted">{dog.breed}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Værforhold */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">
-            <Cloud className="inline w-5 h-5 mr-2" />
-            Værforhold
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <label className="input-label">Temperatur (°C)</label>
-              <input
-                type="number"
-                value={temperature}
-                onChange={(e) => setTemperature(e.target.value)}
-                placeholder="8"
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="input-label">Vindstyrke (m/s)</label>
-              <input
-                type="number"
-                value={windSpeed}
-                onChange={(e) => setWindSpeed(e.target.value)}
-                placeholder="3"
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="input-label">Vindretning</label>
-              <select
-                value={windDirection}
-                onChange={(e) => setWindDirection(e.target.value)}
-                className="select"
-              >
-                <option value="">Velg</option>
-                <option value="N">Nord</option>
-                <option value="NØ">Nordøst</option>
-                <option value="Ø">Øst</option>
-                <option value="SØ">Sørøst</option>
-                <option value="S">Sør</option>
-                <option value="SV">Sørvest</option>
-                <option value="V">Vest</option>
-                <option value="NV">Nordvest</option>
-              </select>
-            </div>
-            <div>
-              <label className="input-label">Forhold</label>
-              <select
-                value={conditions}
-                onChange={(e) => setConditions(e.target.value)}
-                className="select"
-              >
-                <option value="">Velg</option>
-                <option value="clear">Klart</option>
-                <option value="cloudy">Lettskyet</option>
-                <option value="overcast">Overskyet</option>
-                <option value="rain">Regn</option>
-                <option value="snow">Snø</option>
-                <option value="fog">Tåke</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Observasjoner */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-text-primary">
-              Observasjoner
-            </h2>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={handleAddObservation}
-            >
-              Legg til
-            </Button>
-          </div>
-
-          {observations.length === 0 ? (
-            <p className="text-text-muted text-center py-4">
-              Ingen observasjoner lagt til
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {observations.map((obs, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end p-4 bg-background rounded-lg"
-                >
-                  <div className="sm:col-span-3">
-                    <label className="input-label">Vilttype</label>
-                    <select
-                      value={obs.type}
-                      onChange={(e) =>
-                        handleObservationChange(index, 'type', e.target.value)
-                      }
-                      className="select"
-                    >
-                      <option value="">Velg</option>
-                      {gameTypes.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="input-label">Antall</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={obs.count}
-                      onChange={(e) =>
-                        handleObservationChange(index, 'count', Number(e.target.value))
-                      }
-                      className="input"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="input-label">Tidspunkt</label>
-                    <input
-                      type="time"
-                      value={obs.time}
-                      onChange={(e) =>
-                        handleObservationChange(index, 'time', e.target.value)
-                      }
-                      className="input"
-                    />
-                  </div>
-                  <div className="sm:col-span-4">
-                    <label className="input-label">Notater</label>
-                    <input
-                      type="text"
-                      value={obs.notes}
-                      onChange={(e) =>
-                        handleObservationChange(index, 'notes', e.target.value)
-                      }
-                      placeholder="Evt. notater"
-                      className="input"
-                    />
-                  </div>
-                  <div className="sm:col-span-1">
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveObservation(index)}
-                      className="btn-ghost btn-icon text-error"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
 
-        {/* Notater og tagger */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">
-            Notater og tagger
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="input-label">Notater</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={4}
-                placeholder="Beskriv jaktturen..."
-                className="input resize-none"
-              />
-            </div>
-            <div>
-              <label className="input-label">Tagger (kommaseparert)</label>
-              <input
-                type="text"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="morgenjakt, storvilt, nordmarka"
-                className="input"
-              />
-              <p className="input-helper">
-                Legg til tagger for enklere søking og filtrering
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* GPX-import */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">
-            <Upload className="inline w-5 h-5 mr-2" />
-            Importer spor
-          </h2>
-          <div className="border-2 border-dashed border-background-lighter rounded-lg p-8 text-center">
-            <Upload className="w-12 h-12 mx-auto text-text-muted mb-4" />
-            <p className="text-text-primary mb-2">
-              Dra og slipp GPX-filer her
-            </p>
-            <p className="text-text-muted text-sm mb-4">
-              eller klikk for å velge filer
-            </p>
-            <Button type="button" variant="outline" size="sm">
-              Velg filer
-            </Button>
-          </div>
-        </div>
-
-        {/* Handlinger */}
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => navigate(-1)}
-          >
+        {/* Handlingsknapper */}
+        <div className="flex justify-end gap-3">
+          <Button type="button" variant="ghost" onClick={() => navigate(-1)}>
             Avbryt
           </Button>
           <Button type="submit" variant="primary" isLoading={isSubmitting}>
-            Opprett jakttur
+            Lagre jakttur
           </Button>
         </div>
       </form>
