@@ -242,6 +242,11 @@ export default function Dashboard() {
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
 
+  // Ref for å spore om initial sync er gjort og rate limiting
+  const hasInitialSynced = useRef(false);
+  const lastSyncTime = useRef<number>(0);
+  const MIN_SYNC_INTERVAL = 300000; // 5 minutter mellom syncs
+
   // Listen for PWA install prompt
   useEffect(() => {
     const handler = (e: Event) => {
@@ -356,9 +361,19 @@ export default function Dashboard() {
   const handleGarminSync = async (silent = false) => {
     if (!selectedDog || isSyncing) return;
 
+    // Rate limiting - sjekk om vi har synket nylig (ikke for initial sync)
+    const now = Date.now();
+    const timeSinceLastSync = now - lastSyncTime.current;
+    if (lastSyncTime.current > 0 && timeSinceLastSync < MIN_SYNC_INTERVAL && !silent) {
+      const minutesLeft = Math.ceil((MIN_SYNC_INTERVAL - timeSinceLastSync) / 60000);
+      toast.error(`Vent ${minutesLeft} min før neste synk`);
+      return;
+    }
+
+    lastSyncTime.current = now;
     setIsSyncing(true);
     try {
-      // Simuler API-kall til Garmin Connect (1.5s for manuell, 0.5s for automatisk)
+      // Simuler API-kall til Garmin Alpha app (1.5s for manuell, 0.5s for automatisk)
       await new Promise((resolve) => setTimeout(resolve, silent ? 500 : 1500));
 
       const matched = mockGarminTracks.find(
@@ -399,27 +414,21 @@ export default function Dashboard() {
     }
   };
 
-  // Ref for å spore om initial sync er gjort
-  const hasInitialSynced = useRef(false);
-
-  // Automatisk synkroniser med Garmin når hund velges eller ved første innlasting
+  // Automatisk synkroniser med Garmin KUN ved første innlasting
   useEffect(() => {
-    if (selectedDog && !matchedTrack && !isSyncing) {
-      // Sjekk om dette er initial mount eller en endring
-      const isInitialMount = !hasInitialSynced.current;
+    // Bare synk én gang ved oppstart
+    if (selectedDog && !matchedTrack && !hasInitialSynced.current) {
+      hasInitialSynced.current = true;
+      lastSyncTime.current = Date.now();
 
-      if (isInitialMount) {
-        hasInitialSynced.current = true;
-      }
-
-      // Vent litt før automatisk synk for å unngå spam
+      // Vent litt før automatisk synk
       const timer = setTimeout(() => {
         handleGarminSync(true); // Silent sync
-      }, isInitialMount ? 500 : 300); // Litt lengre delay ved første innlasting
+      }, 500);
 
       return () => clearTimeout(timer);
     }
-  }, [selectedDog, matchedTrack, isSyncing]);
+  }, [selectedDog, matchedTrack]); // IKKE inkluder isSyncing - det skaper loop!
 
   const handleQuickSave = async () => {
     if (!selectedDog) {
