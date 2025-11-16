@@ -450,19 +450,17 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Registrer jakttur - HOVEDFOKUS */}
-      <div className="relative p-5 bg-gradient-to-br from-primary-700/30 via-primary-700/20 to-background rounded-xl shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-t from-transparent to-primary-700/10 rounded-xl pointer-events-none" />
-        <div className="relative">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-primary-400">Registrer jakttur</h1>
-            <span className="text-xs text-text-muted bg-background/50 px-2 py-1 rounded">
-              {new Date().toLocaleDateString('nb-NO', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-              })}
-            </span>
-          </div>
+      <div className="p-5 bg-background-light rounded-xl">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-bold text-text-primary">Registrer jakttur</h1>
+          <span className="text-xs text-text-muted">
+            {new Date().toLocaleDateString('nb-NO', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+            })}
+          </span>
+        </div>
 
         {/* Hund og Sted */}
         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -689,7 +687,6 @@ export default function Dashboard() {
               {totalHarvested > 0 && `${totalHarvested} felt`}
             </span>
           )}
-        </div>
         </div>
       </div>
 
