@@ -358,21 +358,21 @@ export default function HuntDetail() {
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="p-6">
           {activeTab === 'map' && (
-            <div className="space-y-4">
-              {/* Kart */}
-              <div className="h-96 bg-background-lighter rounded-lg overflow-hidden">
+            <div className="space-y-6">
+              {/* Kart - mye større */}
+              <div className="h-[70vh] min-h-[500px] bg-background-lighter rounded-xl overflow-hidden shadow-inner-lg">
                 <HuntMap tracks={tracks} center={hunt.location.coordinates} />
               </div>
 
               {/* Tidslinje-kontroller */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 bg-background p-4 rounded-xl">
                 <button
                   onClick={() => setIsPlaying(!isPlaying)}
-                  className="btn-primary btn-icon"
+                  className="btn-primary btn-icon-lg"
                 >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
                 </button>
                 <button
                   onClick={() => setPlaybackTime(0)}
@@ -388,28 +388,41 @@ export default function HuntDetail() {
                   onChange={(e) => setPlaybackTime(Number(e.target.value))}
                   className="timeline-slider flex-1"
                 />
-                <span className="text-sm text-text-muted w-20 text-right">
+                <span className="text-sm font-medium text-text-secondary w-20 text-right">
                   {Math.round(playbackTime)}%
                 </span>
               </div>
 
-              {/* Sporstatistikk */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {/* Sporstatistikk - forbedret design */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {tracks.map((track) => (
-                  <div key={track.id} className="p-3 bg-background rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div key={track.id} className="p-4 bg-background rounded-xl border border-background-lighter">
+                    <div className="flex items-center gap-3 mb-3">
                       <div
-                        className="w-3 h-3 rounded-full"
+                        className="w-4 h-4 rounded-full shadow-glow"
                         style={{ backgroundColor: track.color }}
                       />
-                      <span className="font-medium text-text-primary text-sm">
+                      <span className="font-semibold text-text-primary">
                         {track.name.split(' - ')[0]}
                       </span>
                     </div>
-                    <div className="text-xs text-text-muted space-y-1">
-                      <p>{track.statistics.distance_km} km</p>
-                      <p>{Math.round(track.statistics.duration_minutes)} min</p>
-                      <p>↑{track.statistics.elevation_gain_m}m</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-text-muted text-xs">Distanse</p>
+                        <p className="text-text-primary font-medium">{track.statistics.distance_km} km</p>
+                      </div>
+                      <div>
+                        <p className="text-text-muted text-xs">Varighet</p>
+                        <p className="text-text-primary font-medium">{Math.round(track.statistics.duration_minutes)} min</p>
+                      </div>
+                      <div>
+                        <p className="text-text-muted text-xs">Høydemeter</p>
+                        <p className="text-text-primary font-medium">↑{track.statistics.elevation_gain_m}m</p>
+                      </div>
+                      <div>
+                        <p className="text-text-muted text-xs">Maks fart</p>
+                        <p className="text-text-primary font-medium">{track.statistics.max_speed_kmh} km/t</p>
+                      </div>
                     </div>
                   </div>
                 ))}

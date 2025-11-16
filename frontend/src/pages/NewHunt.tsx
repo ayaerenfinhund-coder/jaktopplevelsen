@@ -255,30 +255,31 @@ export default function NewHunt() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {gameTypes.map((type) => (
-              <label
+              <button
                 key={type.value}
-                className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+                type="button"
+                onClick={() => {
+                  if (selectedGameTypes.includes(type.value)) {
+                    setSelectedGameTypes(selectedGameTypes.filter((t) => t !== type.value));
+                  } else {
+                    setSelectedGameTypes([...selectedGameTypes, type.value]);
+                  }
+                }}
+                className={`relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                   selectedGameTypes.includes(type.value)
-                    ? 'bg-primary-700/20 border-primary-500'
-                    : 'border-background-lighter hover:border-primary-700/50'
+                    ? 'bg-primary-700/30 border-primary-500 shadow-glow scale-[1.02]'
+                    : 'border-background-lighter hover:border-primary-700/50 hover:bg-background-lighter'
                 }`}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedGameTypes.includes(type.value)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedGameTypes([...selectedGameTypes, type.value]);
-                    } else {
-                      setSelectedGameTypes(
-                        selectedGameTypes.filter((t) => t !== type.value)
-                      );
-                    }
-                  }}
-                  className="checkbox"
-                />
-                <span className="text-text-primary">{type.label}</span>
-              </label>
+                {selectedGameTypes.includes(type.value) && (
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
+                <span className="text-text-primary font-medium">{type.label}</span>
+              </button>
             ))}
           </div>
         </div>
@@ -289,33 +290,39 @@ export default function NewHunt() {
             <Dog className="inline w-5 h-5 mr-2" />
             Hunder
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {mockDogs.map((dog) => (
-              <label
+              <button
                 key={dog.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                type="button"
+                onClick={() => {
+                  if (selectedDogs.includes(dog.id)) {
+                    setSelectedDogs(selectedDogs.filter((d) => d !== dog.id));
+                  } else {
+                    setSelectedDogs([...selectedDogs, dog.id]);
+                  }
+                }}
+                className={`relative flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 text-left ${
                   selectedDogs.includes(dog.id)
-                    ? 'bg-primary-700/20 border-primary-500'
-                    : 'border-background-lighter hover:border-primary-700/50'
+                    ? 'bg-accent-500/20 border-accent-500 shadow-lg scale-[1.02]'
+                    : 'border-background-lighter hover:border-accent-500/50 hover:bg-background-lighter'
                 }`}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedDogs.includes(dog.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedDogs([...selectedDogs, dog.id]);
-                    } else {
-                      setSelectedDogs(selectedDogs.filter((d) => d !== dog.id));
-                    }
-                  }}
-                  className="checkbox"
-                />
+                {selectedDogs.includes(dog.id) && (
+                  <div className="absolute top-2 right-2 w-6 h-6 bg-accent-500 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
+                <div className="w-12 h-12 bg-accent-500/30 rounded-full flex items-center justify-center">
+                  <Dog className="w-6 h-6 text-accent-400" />
+                </div>
                 <div>
-                  <p className="text-text-primary font-medium">{dog.name}</p>
+                  <p className="text-text-primary font-semibold text-lg">{dog.name}</p>
                   <p className="text-sm text-text-muted">{dog.breed}</p>
                 </div>
-              </label>
+              </button>
             ))}
           </div>
         </div>
