@@ -1,0 +1,51 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
+import Layout from './components/layout/Layout';
+import LoadingSpinner from './components/common/LoadingSpinner';
+
+// Lazy load pages for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const HuntDetail = lazy(() => import('./pages/HuntDetail'));
+const NewHunt = lazy(() => import('./pages/NewHunt'));
+const Dogs = lazy(() => import('./pages/Dogs'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Login = lazy(() => import('./pages/Login'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+function App() {
+  // For demo purposes, we'll assume user is logged in
+  const isAuthenticated = true;
+
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <LoadingSpinner size="lg" />
+        </div>
+      }
+    >
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Layout />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="hunt/new" element={<NewHunt />} />
+          <Route path="hunt/:id" element={<HuntDetail />} />
+          <Route path="dogs" element={<Dogs />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+export default App;
