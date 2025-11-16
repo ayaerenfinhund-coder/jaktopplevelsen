@@ -100,7 +100,7 @@ const stats = {
 
 // Mock data for dogs and locations
 const mockDogs = [{ id: 'rolex', name: 'Rolex', breed: 'Dachs' }];
-const recentLocations = ['Semsvannet', 'Nordmarka', 'Romeriksåsen'];
+const recentLocations = ['Storeberg', 'Tveiter', 'Hanevold'];
 
 // Mock GPS tracks from Garmin
 interface GarminTrack {
@@ -113,6 +113,7 @@ interface GarminTrack {
   distance_km: number;
   duration_minutes: number;
   coordinates: [number, number][];
+  detectedLocation?: string; // Automatisk stedsnavn fra GPS
 }
 
 const mockGarminTracks: GarminTrack[] = [
@@ -130,6 +131,8 @@ const mockGarminTracks: GarminTrack[] = [
       [59.892, 10.453],
       [59.893, 10.452],
     ],
+    // Automatisk detektert stedsnavn fra GPS-koordinater
+    detectedLocation: 'Storeberg',
   },
 ];
 
@@ -185,7 +188,16 @@ export default function Dashboard() {
       if (matched) {
         setMatchedTrack(matched);
         setShowTrackConfirm(true);
-        toast.success(`GPS-spor funnet for ${matched.dogName} i dag!`);
+
+        // Automatisk sett stedsnavn fra GPS-spor
+        if (matched.detectedLocation) {
+          setSelectedLocation(matched.detectedLocation);
+          toast.success(
+            `GPS-spor funnet! Sted satt til ${matched.detectedLocation}`
+          );
+        } else {
+          toast.success(`GPS-spor funnet for ${matched.dogName} i dag!`);
+        }
       } else {
         toast.success('Synkronisert med Garmin');
         if (mockGarminTracks.length > 0) {
@@ -347,6 +359,11 @@ export default function Dashboard() {
                   </h4>
                   <p className="text-sm text-text-secondary mb-3">
                     Automatisk matchet spor for {matchedTrack.dogName} fra i dag
+                    {matchedTrack.detectedLocation && (
+                      <span className="block mt-1">
+                        <strong>Sted:</strong> {matchedTrack.detectedLocation} (automatisk fra GPS)
+                      </span>
+                    )}
                   </p>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
