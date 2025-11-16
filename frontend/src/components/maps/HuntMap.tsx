@@ -61,39 +61,49 @@ function MapBoundsUpdater({ tracks }: { tracks: Track[] }) {
   return null;
 }
 
-// Kartverket WMTS tjenester
-const KARTVERKET_LAYERS = {
-  topo: {
-    name: 'Topografisk',
-    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/topo4/default/webmercator/{z}/{y}/{x}.png',
+// Beste norske kartkilder for jakt
+const MAP_LAYERS = {
+  // Norgeskart - offisielt topografisk kart
+  norgeskart: {
+    name: 'Norgeskart Topografisk',
+    url: 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}',
     attribution: '© <a href="https://kartverket.no">Kartverket</a>',
   },
-  topoGray: {
-    name: 'Topografisk (grå)',
-    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/topo4graatone/default/webmercator/{z}/{y}/{x}.png',
+  // Norgeskart gråtone - bedre for spor
+  norgeskartGray: {
+    name: 'Norgeskart Gråtone',
+    url: 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4graatone&zoom={z}&x={x}&y={y}',
     attribution: '© <a href="https://kartverket.no">Kartverket</a>',
   },
-  grunnkart: {
-    name: 'Grunnkart',
-    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/norges_grunnkart/default/webmercator/{z}/{y}/{x}.png',
+  // Norge i bilder - satellitt/flyfoto
+  satellite: {
+    name: 'Norge i Bilder (Flyfoto)',
+    url: 'https://waapi.webatlas.no/maptiles/tiles/webatlas-orto-newup/wa_grid/{z}/{x}/{y}.jpeg',
+    attribution: '© <a href="https://norgeibilder.no">Norge i bilder</a>',
+  },
+  // Turkart - spesialisert for friluftsliv
+  turkart: {
+    name: 'Turkart (Friluftsliv)',
+    url: 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster4&zoom={z}&x={x}&y={y}',
     attribution: '© <a href="https://kartverket.no">Kartverket</a>',
   },
-  terrengskygge: {
-    name: 'Terrengskygge',
-    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/terrengskygge/default/webmercator/{z}/{y}/{x}.png',
-    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
+  // OpenTopoMap som fallback
+  openTopo: {
+    name: 'OpenTopoMap',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenTopoMap',
   },
 };
 
-// WMS overlays
+// WMS overlays - tilleggsinfo
 const WMS_OVERLAYS = {
   eiendom: {
     name: 'Eiendomsgrenser',
-    url: 'https://openwms.statkart.no/skwms1/wms.matrikkel',
-    layers: 'Eiendomskart',
+    url: 'https://wms.geonorge.no/skwms1/wms.matrikkelkart',
+    layers: 'matrikkelkart',
   },
-  ar5: {
-    name: 'Markslag (AR5)',
+  markslag: {
+    name: 'Markslag (skog/myr)',
     url: 'https://wms.nibio.no/cgi-bin/ar5',
     layers: 'Arealtype',
   },
@@ -109,7 +119,6 @@ export default function HuntMap({
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showPropertyBoundaries, setShowPropertyBoundaries] = useState(false);
   const [showLandUse, setShowLandUse] = useState(false);
-  const [showTerrainShade, setShowTerrainShade] = useState(true);
 
   const getVisibleCoordinates = (track: Track) => {
     if (animationTime >= 100) {
@@ -138,50 +147,48 @@ export default function HuntMap({
         zoomControl={showControls}
         attributionControl={true}
       >
-        {/* Kartverket basiskart */}
+        {/* Norske kartalternativer */}
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Topografisk Norgeskart">
+          <LayersControl.BaseLayer checked name={MAP_LAYERS.norgeskart.name}>
             <TileLayer
-              url={KARTVERKET_LAYERS.topo.url}
-              attribution={KARTVERKET_LAYERS.topo.attribution}
-              maxZoom={20}
+              url={MAP_LAYERS.norgeskart.url}
+              attribution={MAP_LAYERS.norgeskart.attribution}
+              maxZoom={18}
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name="Topografisk (gråtone)">
+          <LayersControl.BaseLayer name={MAP_LAYERS.turkart.name}>
             <TileLayer
-              url={KARTVERKET_LAYERS.topoGray.url}
-              attribution={KARTVERKET_LAYERS.topoGray.attribution}
-              maxZoom={20}
+              url={MAP_LAYERS.turkart.url}
+              attribution={MAP_LAYERS.turkart.attribution}
+              maxZoom={18}
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name="Norges Grunnkart">
+          <LayersControl.BaseLayer name={MAP_LAYERS.norgeskartGray.name}>
             <TileLayer
-              url={KARTVERKET_LAYERS.grunnkart.url}
-              attribution={KARTVERKET_LAYERS.grunnkart.attribution}
-              maxZoom={20}
+              url={MAP_LAYERS.norgeskartGray.url}
+              attribution={MAP_LAYERS.norgeskartGray.attribution}
+              maxZoom={18}
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name="OpenTopoMap">
+          <LayersControl.BaseLayer name={MAP_LAYERS.satellite.name}>
             <TileLayer
-              url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-              attribution="© OpenTopoMap"
+              url={MAP_LAYERS.satellite.url}
+              attribution={MAP_LAYERS.satellite.attribution}
+              maxZoom={19}
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name={MAP_LAYERS.openTopo.name}>
+            <TileLayer
+              url={MAP_LAYERS.openTopo.url}
+              attribution={MAP_LAYERS.openTopo.attribution}
               maxZoom={17}
             />
           </LayersControl.BaseLayer>
         </LayersControl>
-
-        {/* Terrengskygge overlay */}
-        {showTerrainShade && (
-          <TileLayer
-            url={KARTVERKET_LAYERS.terrengskygge.url}
-            attribution=""
-            opacity={0.3}
-            maxZoom={20}
-          />
-        )}
 
         {/* Eiendomsgrenser WMS */}
         {showPropertyBoundaries && (
@@ -190,15 +197,15 @@ export default function HuntMap({
             layers={WMS_OVERLAYS.eiendom.layers}
             format="image/png"
             transparent={true}
-            opacity={0.7}
+            opacity={0.6}
           />
         )}
 
-        {/* AR5 Markslag WMS */}
+        {/* Markslag WMS */}
         {showLandUse && (
           <WMSTileLayer
-            url={WMS_OVERLAYS.ar5.url}
-            layers={WMS_OVERLAYS.ar5.layers}
+            url={WMS_OVERLAYS.markslag.url}
+            layers={WMS_OVERLAYS.markslag.layers}
             format="image/png"
             transparent={true}
             opacity={0.4}
@@ -273,20 +280,9 @@ export default function HuntMap({
       <div className="absolute top-4 left-4 bg-background-light/95 backdrop-blur-sm p-3 rounded-lg shadow-lg z-[1000]">
         <h4 className="text-xs font-semibold text-text-muted uppercase mb-3 flex items-center gap-2">
           <Layers className="w-4 h-4" />
-          Kartlag
+          Tilleggsinfo
         </h4>
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showTerrainShade}
-              onChange={(e) => setShowTerrainShade(e.target.checked)}
-              className="checkbox"
-            />
-            <Mountain className="w-4 h-4 text-text-muted" />
-            <span className="text-text-primary">Terrengskygge</span>
-          </label>
-
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="checkbox"
@@ -309,6 +305,9 @@ export default function HuntMap({
             <span className="text-text-primary">Markslag (skog/myr)</span>
           </label>
         </div>
+        <p className="text-xs text-text-muted mt-3">
+          Bytt kart: ikon øverst til høyre
+        </p>
       </div>
 
       {/* Sporinfo panel */}
