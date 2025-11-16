@@ -350,9 +350,19 @@ export default function Dashboard() {
           setSelectedLocation(matched.detectedLocation);
           if (!silent) {
             toast.success(`GPS-spor funnet! Sted: ${matched.detectedLocation}`);
+          } else {
+            toast.success(`Automatisk synkronisert: ${matched.dogName} på ${matched.detectedLocation}`, {
+              duration: 3000,
+              icon: '✓',
+            });
           }
         } else if (!silent) {
           toast.success(`GPS-spor funnet for ${matched.dogName}!`);
+        } else {
+          toast.success(`Automatisk synkronisert: ${matched.dogName}`, {
+            duration: 3000,
+            icon: '✓',
+          });
         }
       } else if (!silent) {
         toast.success('Synkronisert - ingen nye spor');
