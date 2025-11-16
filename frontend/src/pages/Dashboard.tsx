@@ -26,6 +26,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import Modal from '../components/common/Modal';
 import toast from 'react-hot-toast';
 import { fetchWeatherFromYr } from '../services/weatherService';
+import { useAppStore } from '../store/useAppStore';
 import type { Hunt } from '../types';
 
 // Mock-data for demonstrasjon
@@ -118,10 +119,6 @@ const mockHunts: Hunt[] = [
   },
 ];
 
-// Mock data for dogs and locations
-const mockDogs = [{ id: 'rolex', name: 'Rolex', breed: 'Dachs' }];
-const recentLocations = ['Storeberg', 'Tveiter', 'Hanevold'];
-
 // Location coordinates for weather lookup
 const locationCoords: Record<string, [number, number]> = {
   Storeberg: [59.891, 10.451],
@@ -200,6 +197,20 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
+  // Zustand store for shared state
+  const {
+    dogs,
+    recentLocations,
+    lastSelectedDog,
+    setLastSelectedDog,
+    lastSelectedLocation,
+    setLastSelectedLocation,
+    addLocation,
+  } = useAppStore();
+
+  // Only active dogs for selection
+  const activeDogs = dogs.filter((d) => d.is_active);
+
   // Season filtering
   const [selectedSeason, setSelectedSeason] = useState<string>(() => {
     // Default to current season
@@ -210,12 +221,11 @@ export default function Dashboard() {
   const [quickNote, setQuickNote] = useState('');
   const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
   const [selectedDog, setSelectedDog] = useState(() => {
-    return localStorage.getItem('lastDog') || mockDogs[0]?.id || '';
+    return lastSelectedDog || activeDogs[0]?.id || '';
   });
   const [selectedLocation, setSelectedLocation] = useState(() => {
-    const saved = localStorage.getItem('lastLocation');
-    if (saved && recentLocations.includes(saved)) {
-      return saved;
+    if (lastSelectedLocation && recentLocations.includes(lastSelectedLocation)) {
+      return lastSelectedLocation;
     }
     return recentLocations[0] || '';
   });
@@ -345,23 +355,20 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, [selectedLocation, customLocation]);
 
-  // Oppdater localStorage
+  // Oppdater Zustand store med valg
   useEffect(() => {
-    if (selectedDog) localStorage.setItem('lastDog', selectedDog);
+    if (selectedDog) {
+      setLastSelectedDog(selectedDog);
+    }
+  }, [selectedDog, setLastSelectedDog]);
+
+  useEffect(() => {
     if (selectedLocation && selectedLocation !== '_custom') {
-      localStorage.setItem('lastLocation', selectedLocation);
+      setLastSelectedLocation(selectedLocation);
     }
-  }, [selectedDog, selectedLocation]);
+  }, [selectedLocation, setLastSelectedLocation]);
 
-  // Rens ugyldig localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('lastLocation');
-    if (saved && !recentLocations.includes(saved)) {
-      localStorage.removeItem('lastLocation');
-    }
-  }, []);
-
-  const currentDogName = mockDogs.find((d) => d.id === selectedDog)?.name || 'Velg hund';
+  const currentDogName = activeDogs.find((d) => d.id === selectedDog)?.name || 'Velg hund';
   const todayDate = new Date().toISOString().split('T')[0];
 
   // Synkroniser med Garmin
@@ -450,9 +457,10 @@ export default function Dashboard() {
     setIsSavingQuickNote(true);
 
     try {
-      const _location = selectedLocation || customLocation;
-      if (customLocation && !recentLocations.includes(customLocation)) {
-        localStorage.setItem('lastLocation', customLocation);
+      const finalLocation = selectedLocation === '_custom' ? customLocation : selectedLocation;
+      if (selectedLocation === '_custom' && customLocation && !recentLocations.includes(customLocation)) {
+        addLocation(customLocation); // Add to global store
+        setLastSelectedLocation(customLocation);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -559,7 +567,7 @@ export default function Dashboard() {
               className="select text-sm"
             >
               <option value="">Velg</option>
-              {mockDogs.map((dog) => (
+              {activeDogs.map((dog) => (
                 <option key={dog.id} value={dog.id}>
                   {dog.name}
                 </option>
@@ -868,7 +876,7 @@ export default function Dashboard() {
             </select>
             <select className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none">
               <option value="">Hund</option>
-              {mockDogs.map((d) => (
+              {activeDogs.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>

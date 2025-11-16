@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -14,6 +14,7 @@ import { nb } from 'date-fns/locale';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import toast from 'react-hot-toast';
+import { useAppStore } from '../store/useAppStore';
 
 interface Dog {
   id: string;
@@ -67,6 +68,23 @@ export default function Dogs() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDog, setEditingDog] = useState<Dog | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<Dog | null>(null);
+
+  // Sync with global store
+  const { addDog, updateDog, removeDog } = useAppStore();
+
+  // Keep global store in sync with local state
+  useEffect(() => {
+    // Sync any new dogs to store (basic info only)
+    dogs.forEach((dog) => {
+      updateDog(dog.id, {
+        id: dog.id,
+        name: dog.name,
+        breed: dog.breed,
+        color: dog.color,
+        is_active: dog.is_active,
+      });
+    });
+  }, [dogs, updateDog]);
 
   // Skjemastate
   const [name, setName] = useState('');
@@ -123,8 +141,9 @@ export default function Dogs() {
       toast.success('Hund oppdatert!');
     } else {
       // Legg til ny hund
+      const newId = `dog${Date.now()}`;
       const newDog: Dog = {
-        id: `dog${Date.now()}`,
+        id: newId,
         name,
         breed,
         birth_date: birthDate || undefined,
@@ -138,6 +157,14 @@ export default function Dogs() {
         },
       };
       setDogs([...dogs, newDog]);
+      // Add to global store immediately
+      addDog({
+        id: newId,
+        name,
+        breed,
+        color,
+        is_active: true,
+      });
       toast.success('Hund lagt til!');
     }
 
@@ -148,6 +175,7 @@ export default function Dogs() {
 
   const handleDelete = (dog: Dog) => {
     setDogs(dogs.filter((d) => d.id !== dog.id));
+    removeDog(dog.id);
     setShowDeleteModal(null);
     toast.success('Hund slettet');
   };
