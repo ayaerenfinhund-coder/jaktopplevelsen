@@ -598,7 +598,7 @@ export default function Dashboard() {
         >
           <div className="flex items-center gap-3">
             <Target className="w-5 h-5 text-primary-400" />
-            <span className="text-sm font-medium text-text-primary">Vilt</span>
+            <span className="text-sm font-medium text-text-primary">Registrer vilt</span>
           </div>
           <div className="flex items-center gap-2">
             {totalSeen > 0 && (
