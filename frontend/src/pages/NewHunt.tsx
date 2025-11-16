@@ -30,9 +30,7 @@ const gameTypes = [
 ];
 
 const mockDogs = [
-  { id: 'dog1', name: 'Rex', breed: 'Norsk Elghund' },
-  { id: 'dog2', name: 'Luna', breed: 'Norsk Elghund' },
-  { id: 'dog3', name: 'Bamse', breed: 'Jämthund' },
+  { id: 'rolex', name: 'Rolex', breed: 'Dachs' },
 ];
 
 interface GameObservation {
