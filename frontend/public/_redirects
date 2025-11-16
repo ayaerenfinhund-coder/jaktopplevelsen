@@ -1,1 +1,3 @@
+# Netlify SPA routing - only redirect paths without extensions
+# Static assets (.js, .css, .png, etc.) will be served directly
 /*    /index.html   200
