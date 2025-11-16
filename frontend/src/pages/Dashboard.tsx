@@ -330,10 +330,13 @@ export default function Dashboard() {
   const todayDate = new Date().toISOString().split('T')[0];
 
   // Synkroniser med Garmin
-  const handleGarminSync = async () => {
+  const handleGarminSync = async (silent = false) => {
+    if (!selectedDog || isSyncing) return;
+
     setIsSyncing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Simuler API-kall til Garmin Connect (1.5s for manuell, 0.5s for automatisk)
+      await new Promise((resolve) => setTimeout(resolve, silent ? 500 : 1500));
 
       const matched = mockGarminTracks.find(
         (track) => track.date === todayDate && track.dogId === selectedDog
@@ -345,19 +348,34 @@ export default function Dashboard() {
 
         if (matched.detectedLocation) {
           setSelectedLocation(matched.detectedLocation);
-          toast.success(`GPS-spor funnet! Sted: ${matched.detectedLocation}`);
-        } else {
+          if (!silent) {
+            toast.success(`GPS-spor funnet! Sted: ${matched.detectedLocation}`);
+          }
+        } else if (!silent) {
           toast.success(`GPS-spor funnet for ${matched.dogName}!`);
         }
-      } else {
-        toast.success('Synkronisert');
+      } else if (!silent) {
+        toast.success('Synkronisert - ingen nye spor');
       }
     } catch (error) {
-      toast.error('Kunne ikke synkronisere');
+      if (!silent) {
+        toast.error('Kunne ikke synkronisere');
+      }
     } finally {
       setIsSyncing(false);
     }
   };
+
+  // Automatisk synkroniser med Garmin når hund velges
+  useEffect(() => {
+    if (selectedDog && !matchedTrack) {
+      // Vent litt før automatisk synk for å unngå spam
+      const timer = setTimeout(() => {
+        handleGarminSync(true); // Silent sync
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedDog]);
 
   const handleQuickSave = async () => {
     if (!selectedDog) {
