@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart3,
+  Images,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -591,57 +592,68 @@ export default function Dashboard() {
         />
 
         {/* Bilder */}
-        <div className="mb-4 flex items-center gap-3">
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const files = e.target.files;
-                if (files) {
-                  const newPhotos: string[] = [];
-                  Array.from(files).forEach((file) => {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                      if (ev.target?.result) {
-                        newPhotos.push(ev.target.result as string);
-                        if (newPhotos.length === files.length) {
-                          setPhotos((prev) => [...prev, ...newPhotos]);
-                        }
+        <label className="block mb-4 cursor-pointer">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = e.target.files;
+              if (files) {
+                const newPhotos: string[] = [];
+                Array.from(files).forEach((file) => {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    if (ev.target?.result) {
+                      newPhotos.push(ev.target.result as string);
+                      if (newPhotos.length === files.length) {
+                        setPhotos((prev) => [...prev, ...newPhotos]);
                       }
-                    };
-                    reader.readAsDataURL(file);
-                  });
-                }
-              }}
-            />
-            <span className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary cursor-pointer">
-              <Camera className="w-3 h-3" />
-              {photos.length > 0 ? `${photos.length} bilder` : 'Legg til bilder'}
-            </span>
-          </label>
-          {photos.length > 0 && (
-            <div className="flex gap-1 overflow-x-auto">
-              {photos.map((photo, i) => (
-                <div key={i} className="relative flex-shrink-0">
-                  <img
-                    src={photo}
-                    alt={`Bilde ${i + 1}`}
-                    className="w-10 h-10 object-cover rounded"
-                  />
-                  <button
-                    onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-error rounded-full flex items-center justify-center text-xs text-white"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                });
+              }
+            }}
+          />
+          <div className="p-3 bg-background rounded-lg flex items-center justify-between hover:bg-background-lighter transition-colors">
+            <div className="flex items-center gap-3">
+              <Images className="w-5 h-5 text-primary-400" />
+              <span className="text-sm font-medium text-text-primary">Bilder</span>
             </div>
-          )}
-        </div>
+            <div className="flex items-center gap-2">
+              {photos.length > 0 ? (
+                <span className="text-sm text-primary-400 font-medium">{photos.length} valgt</span>
+              ) : (
+                <span className="text-sm text-text-muted">Legg til</span>
+              )}
+              <ChevronRight className="w-4 h-4 text-text-muted" />
+            </div>
+          </div>
+        </label>
+        {photos.length > 0 && (
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
+            {photos.map((photo, i) => (
+              <div key={i} className="relative flex-shrink-0">
+                <img
+                  src={photo}
+                  alt={`Bilde ${i + 1}`}
+                  className="w-14 h-14 object-cover rounded-lg"
+                />
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPhotos(photos.filter((_, idx) => idx !== i));
+                  }}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-error rounded-full flex items-center justify-center text-xs text-white hover:bg-error/80"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* GPS-spor */}
         {showTrackConfirm && matchedTrack && (
@@ -701,9 +713,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Sesong og statistikk - egen synlig boks */}
-      <div className="p-4 bg-background-lighter/30 rounded-xl">
-        <div className="flex items-center justify-between mb-2">
+      {/* Sesong og jaktturer */}
+      <div className="p-4 bg-background-light rounded-xl space-y-4">
+        {/* Sesongnavigering */}
+        <div className="flex items-center justify-between">
           <button
             onClick={() => navigateSeason('prev')}
             disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1}
@@ -734,7 +747,60 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <div className="text-center">
+        {/* Søk og filter */}
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Søk i jaktturer..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-background border-none rounded-lg pl-9 pr-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:ring-1 focus:ring-primary-500"
+            />
+          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-2 rounded-lg transition-colors ${
+              showFilters ? 'bg-primary-700/30 text-primary-400' : 'bg-background text-text-muted hover:text-text-primary'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Filter */}
+        {showFilters && (
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-background-lighter">
+            <select className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none">
+              <option value="">Vilt</option>
+              {gameTypes.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+            <select className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none">
+              <option value="">Sted</option>
+              {recentLocations.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
+            </select>
+            <select className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none">
+              <option value="">Hund</option>
+              {mockDogs.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Lenke til hundestatistikk */}
+        <div className="text-center pt-2 border-t border-background-lighter">
           <button
             onClick={() => navigate('/statistics')}
             className="text-xs text-primary-400 hover:text-primary-300"
@@ -743,69 +809,6 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
-
-      {/* Søk */}
-      <div className="flex gap-3">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input
-            type="text"
-            placeholder="Søk..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-9 text-sm"
-          />
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<Filter className="w-4 h-4" />}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          Filter
-        </Button>
-      </div>
-
-      {/* Filter */}
-      {showFilters && (
-        <div className="card p-4 animate-slide-down">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs text-text-muted mb-1 block">Vilt</label>
-              <select className="select text-sm">
-                <option value="">Alle</option>
-                {gameTypes.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-text-muted mb-1 block">Sted</label>
-              <select className="select text-sm">
-                <option value="">Alle</option>
-                {recentLocations.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-text-muted mb-1 block">Hund</label>
-              <select className="select text-sm">
-                <option value="">Alle</option>
-                {mockDogs.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Jakttur-liste */}
       <div className="space-y-3">
@@ -919,10 +922,12 @@ function HuntCard({ hunt }: { hunt: Hunt }) {
   const totalHarvested = hunt.game_harvested.reduce((acc, g) => acc + g.count, 0);
 
   return (
-    <Link to={`/hunt/${hunt.id}`} className="block">
-      <div className="card p-4 hover:bg-background-light transition-colors">
+    <Link to={`/hunt/${hunt.id}`} className="block group">
+      <div className="bg-background-light rounded-lg p-4 hover:bg-background-lighter transition-all duration-200 hover:scale-[1.01] hover:shadow-lg border border-transparent hover:border-primary-700/30 cursor-pointer">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-text-primary text-sm">{hunt.title}</h3>
+          <h3 className="font-semibold text-text-primary text-sm group-hover:text-primary-400 transition-colors">
+            {hunt.title}
+          </h3>
           <span className="text-xs text-text-muted">
             {format(new Date(hunt.date), 'd. MMM', { locale: nb })}
           </span>
@@ -938,7 +943,7 @@ function HuntCard({ hunt }: { hunt: Hunt }) {
             {hunt.dogs.length}
           </span>
           {totalSeen > 0 && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-primary-400">
               <Eye className="w-3 h-3" />
               {totalSeen}
             </span>
@@ -955,12 +960,13 @@ function HuntCard({ hunt }: { hunt: Hunt }) {
               {hunt.photos.length}
             </span>
           )}
+          <ChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-primary-400" />
         </div>
 
         {hunt.game_type.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {hunt.game_type.slice(0, 3).map((type) => (
-              <span key={type} className="badge-secondary text-xs">
+              <span key={type} className="text-xs bg-background px-2 py-0.5 rounded text-text-muted">
                 {gameTypeLabels[type] || type}
               </span>
             ))}
