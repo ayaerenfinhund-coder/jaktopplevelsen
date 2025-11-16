@@ -693,13 +693,13 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Sentrerte knapper - tynnere og finere */}
+        {/* Sentrerte knapper - minimalistisk */}
         <div className="flex flex-col items-center gap-2">
           {!matchedTrack && (
             <button
               onClick={handleGarminSync}
               disabled={isSyncing || !selectedDog}
-              className="w-full max-w-sm flex items-center justify-center gap-2 py-2 px-4 border border-border rounded-lg text-sm text-text-secondary hover:bg-background-lighter transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full max-w-sm flex items-center justify-center gap-2 py-2 text-sm text-text-muted hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Synkroniserer...' : 'Synk med Garmin'}
@@ -709,7 +709,7 @@ export default function Dashboard() {
           <button
             onClick={handleQuickSave}
             disabled={isSavingQuickNote || !selectedDog || (!selectedLocation && !customLocation)}
-            className="w-full max-w-sm flex items-center justify-center gap-2 py-2 px-4 border border-primary-500 rounded-lg text-sm text-primary-400 hover:bg-primary-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full max-w-sm flex items-center justify-center gap-2 py-2.5 bg-primary-700/80 hover:bg-primary-700 rounded-lg text-sm text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
             {isSavingQuickNote ? 'Lagrer...' : 'Lagre jakttur'}
@@ -725,19 +725,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Sesong navigering - kompakt og tydelig */}
-      <div className="flex items-center justify-between bg-background-lighter/50 rounded-lg p-3 border border-border">
+      {/* Sesong navigering - minimalistisk */}
+      <div className="flex items-center justify-between">
         <button
           onClick={() => navigateSeason('prev')}
           disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1}
-          className="p-1.5 border border-border rounded hover:bg-background-lighter transition-colors disabled:opacity-30"
+          className="p-1.5 text-text-muted hover:text-text-primary transition-colors disabled:opacity-30"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-5 h-5" />
         </button>
 
         <div className="text-center">
-          <div className="text-sm font-bold text-text-primary">
-            Sesong {selectedSeason}
+          <div className="text-sm font-semibold text-primary-400">
+            {selectedSeason}
           </div>
           <div className="text-xs text-text-muted">
             {seasonStats.total_hunts} turer • {seasonStats.total_seen} sett • {seasonStats.total_harvested} felt
@@ -747,19 +747,19 @@ export default function Dashboard() {
         <button
           onClick={() => navigateSeason('next')}
           disabled={availableSeasons.indexOf(selectedSeason) === 0}
-          className="p-1.5 border border-border rounded hover:bg-background-lighter transition-colors disabled:opacity-30"
+          className="p-1.5 text-text-muted hover:text-text-primary transition-colors disabled:opacity-30"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-5 h-5" />
         </button>
       </div>
 
       {/* Statistikk per sted */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-text-primary">Per sted</h3>
+          <h3 className="text-xs font-medium text-text-muted uppercase tracking-wide">Per sted</h3>
           <button
             onClick={() => navigate('/statistics')}
-            className="text-xs text-primary-400 hover:underline"
+            className="text-xs text-primary-400 hover:text-primary-300"
           >
             Hundestatistikk →
           </button>
@@ -773,7 +773,7 @@ export default function Dashboard() {
               <button
                 key={loc}
                 onClick={() => setSearchQuery(loc)}
-                className="text-left p-2 rounded border border-border hover:bg-background-lighter transition-colors"
+                className="text-left p-2 rounded bg-background-lighter/50 hover:bg-background-lighter transition-colors"
               >
                 <div className="text-xs font-medium text-text-primary truncate">{loc}</div>
                 <div className="text-xs text-text-muted">

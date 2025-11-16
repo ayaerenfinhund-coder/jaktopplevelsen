@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   User,
   Bell,
-  Palette,
   Database,
   Shield,
   RefreshCw,
@@ -21,15 +20,9 @@ export default function Settings() {
   const [name, setName] = useState('Ola Nordmann');
   const [email, setEmail] = useState('ola@eksempel.no');
 
-  // App-innstillinger
-  const [theme, setTheme] = useState('dark');
-  const [language, setLanguage] = useState('no');
-  const [units, setUnits] = useState('metric');
-  const [mapStyle, setMapStyle] = useState('terrain');
-
   // Varsler
-  const [emailSummary, setEmailSummary] = useState(true);
-  const [newTrackNotification, setNewTrackNotification] = useState(true);
+  const [emailSummary, setEmailSummary] = useState(false);
+  const [newTrackNotification, setNewTrackNotification] = useState(false);
   const [backupReminder, setBackupReminder] = useState(true);
 
   // Garmin
@@ -65,7 +58,6 @@ export default function Settings() {
 
   const tabs = [
     { id: 'profile', label: 'Profil', icon: User },
-    { id: 'appearance', label: 'Utseende', icon: Palette },
     { id: 'notifications', label: 'Varsler', icon: Bell },
     { id: 'garmin', label: 'Garmin', icon: RefreshCw },
     { id: 'data', label: 'Data', icon: Database },
@@ -141,90 +133,6 @@ export default function Settings() {
                   />
                   <p className="input-helper">E-post kan ikke endres</p>
                 </div>
-              </div>
-
-              <div className="pt-4 border-t border-background-lighter">
-                <Button
-                  variant="primary"
-                  onClick={handleSave}
-                  isLoading={isSaving}
-                  leftIcon={<Save className="w-4 h-4" />}
-                >
-                  Lagre endringer
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'appearance' && (
-            <div className="card p-6 space-y-6">
-              <h2 className="text-xl font-semibold text-text-primary">
-                Utseende og tilpasning
-              </h2>
-
-              <div>
-                <label className="input-label">Tema</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={`p-4 rounded-lg border text-center transition-colors ${
-                      theme === 'light'
-                        ? 'border-primary-500 bg-primary-700/20'
-                        : 'border-background-lighter hover:border-primary-700/50'
-                    }`}
-                  >
-                    <div className="w-12 h-12 bg-white rounded-lg mx-auto mb-2" />
-                    <span className="text-text-primary">Lys</span>
-                  </button>
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={`p-4 rounded-lg border text-center transition-colors ${
-                      theme === 'dark'
-                        ? 'border-primary-500 bg-primary-700/20'
-                        : 'border-background-lighter hover:border-primary-700/50'
-                    }`}
-                  >
-                    <div className="w-12 h-12 bg-background rounded-lg mx-auto mb-2" />
-                    <span className="text-text-primary">Mørk</span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="input-label">Språk</label>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="select"
-                >
-                  <option value="no">Norsk</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="input-label">Måleenheter</label>
-                <select
-                  value={units}
-                  onChange={(e) => setUnits(e.target.value)}
-                  className="select"
-                >
-                  <option value="metric">Metrisk (km, m, °C)</option>
-                  <option value="imperial">Imperial (mi, ft, °F)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="input-label">Kartstil</label>
-                <select
-                  value={mapStyle}
-                  onChange={(e) => setMapStyle(e.target.value)}
-                  className="select"
-                >
-                  <option value="terrain">Terreng</option>
-                  <option value="satellite">Satellitt</option>
-                  <option value="standard">Standard</option>
-                </select>
               </div>
 
               <div className="pt-4 border-t border-background-lighter">
