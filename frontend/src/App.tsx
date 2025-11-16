@@ -12,6 +12,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const DogStatistics = lazy(() => import('./pages/DogStatistics'));
 const Login = lazy(() => import('./pages/Login'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const PublicHuntView = lazy(() => import('./pages/PublicHuntView'));
 
 function App() {
   // For demo purposes, we'll assume user is logged in
@@ -27,6 +28,7 @@ function App() {
     >
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/share/:shareId" element={<PublicHuntView />} />
         <Route
           path="/"
           element={

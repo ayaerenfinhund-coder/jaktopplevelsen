@@ -449,18 +449,20 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Registrer jakttur */}
-      <div className="card p-4 bg-gradient-to-br from-primary-700/10 to-transparent border border-primary-700/30">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-bold text-text-primary">Registrer jakttur</h1>
-          <span className="text-xs text-text-muted">
-            {new Date().toLocaleDateString('nb-NO', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-            })}
-          </span>
-        </div>
+      {/* Registrer jakttur - HOVEDFOKUS */}
+      <div className="relative p-5 bg-gradient-to-br from-primary-700/30 via-primary-700/20 to-background rounded-xl shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-t from-transparent to-primary-700/10 rounded-xl pointer-events-none" />
+        <div className="relative">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-bold text-primary-400">Registrer jakttur</h1>
+            <span className="text-xs text-text-muted bg-background/50 px-2 py-1 rounded">
+              {new Date().toLocaleDateString('nb-NO', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              })}
+            </span>
+          </div>
 
         {/* Hund og Sted */}
         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -532,66 +534,37 @@ export default function Dashboard() {
           <div className="text-xs text-text-muted mb-4">Henter vær fra yr.no...</div>
         )}
 
-        {/* Observasjoner og Skutt - kompakt */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="text-xs font-medium text-text-muted mb-2 flex items-center gap-1">
+        {/* Observasjoner og Skutt - ultrakompakt */}
+        <div className="mb-4">
+          <div className="flex items-center gap-4 text-xs text-text-muted mb-2">
+            <span className="flex items-center gap-1">
               <Eye className="w-3 h-3" /> Observert
-            </label>
-            <div className="space-y-1">
-              {gameTypes.slice(0, 4).map((game) => (
-                <div key={game.id} className="flex items-center justify-between">
-                  <span className="text-sm text-text-primary">{game.name}</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => updateGameCount(setGameSeen, game.id, -1)}
-                      className="w-6 h-6 rounded border border-border text-text-primary hover:bg-background-lighter text-sm"
-                    >
-                      -
-                    </button>
-                    <span className="w-6 text-center text-sm font-semibold text-text-primary">
-                      {gameSeen[game.id] || 0}
-                    </span>
-                    <button
-                      onClick={() => updateGameCount(setGameSeen, game.id, 1)}
-                      className="w-6 h-6 rounded border border-border text-text-primary hover:bg-background-lighter text-sm"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-text-muted mb-2 flex items-center gap-1">
+            </span>
+            <span className="flex items-center gap-1">
               <Target className="w-3 h-3" /> Skutt
-            </label>
-            <div className="space-y-1">
-              {gameTypes.slice(0, 4).map((game) => (
-                <div key={game.id} className="flex items-center justify-between">
-                  <span className="text-sm text-text-primary">{game.name}</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
-                      className="w-6 h-6 rounded border border-border text-text-primary hover:bg-background-lighter text-sm"
-                    >
-                      -
-                    </button>
-                    <span className="w-6 text-center text-sm font-semibold text-text-primary">
-                      {gameHarvested[game.id] || 0}
-                    </span>
-                    <button
-                      onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
-                      className="w-6 h-6 rounded border border-border text-text-primary hover:bg-background-lighter text-sm"
-                    >
-                      +
-                    </button>
-                  </div>
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {gameTypes.slice(0, 4).map((game) => (
+              <div key={game.id} className="flex items-center gap-2">
+                <span className="text-xs text-text-muted w-12">{game.name}</span>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => updateGameCount(setGameSeen, game.id, 1)}
+                    className="text-xs text-primary-400 hover:text-primary-300 px-1"
+                  >
+                    +{gameSeen[game.id] || 0}
+                  </button>
+                  <span className="text-text-muted">/</span>
+                  <button
+                    onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
+                    className="text-xs text-success hover:text-green-400 px-1"
+                  >
+                    {gameHarvested[game.id] || 0}
+                  </button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -609,55 +582,49 @@ export default function Dashboard() {
         />
 
         {/* Bilder */}
-        <div className="mb-4">
-          <label className="text-xs text-text-muted mb-2 block">Bilder</label>
-          <div className="flex items-center gap-2">
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  const files = e.target.files;
-                  if (files) {
-                    const newPhotos: string[] = [];
-                    Array.from(files).forEach((file) => {
-                      const reader = new FileReader();
-                      reader.onload = (ev) => {
-                        if (ev.target?.result) {
-                          newPhotos.push(ev.target.result as string);
-                          if (newPhotos.length === files.length) {
-                            setPhotos((prev) => [...prev, ...newPhotos]);
-                          }
+        <div className="mb-4 flex items-center gap-3">
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files) {
+                  const newPhotos: string[] = [];
+                  Array.from(files).forEach((file) => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      if (ev.target?.result) {
+                        newPhotos.push(ev.target.result as string);
+                        if (newPhotos.length === files.length) {
+                          setPhotos((prev) => [...prev, ...newPhotos]);
                         }
-                      };
-                      reader.readAsDataURL(file);
-                    });
-                  }
-                }}
-              />
-              <div className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg hover:bg-background-lighter transition-colors text-sm">
-                <Camera className="w-4 h-4 text-text-muted" />
-                <span className="text-text-secondary">Legg til bilder</span>
-              </div>
-            </label>
-            {photos.length > 0 && (
-              <span className="text-xs text-text-muted">{photos.length} bilde(r)</span>
-            )}
-          </div>
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  });
+                }
+              }}
+            />
+            <span className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary cursor-pointer">
+              <Camera className="w-3 h-3" />
+              {photos.length > 0 ? `${photos.length} bilder` : 'Legg til bilder'}
+            </span>
+          </label>
           {photos.length > 0 && (
-            <div className="flex gap-2 mt-2 overflow-x-auto pb-2">
+            <div className="flex gap-1 overflow-x-auto">
               {photos.map((photo, i) => (
                 <div key={i} className="relative flex-shrink-0">
                   <img
                     src={photo}
                     alt={`Bilde ${i + 1}`}
-                    className="w-16 h-16 object-cover rounded-lg"
+                    className="w-10 h-10 object-cover rounded"
                   />
                   <button
                     onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-background-lighter rounded-full flex items-center justify-center text-xs hover:bg-error hover:text-white"
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-error rounded-full flex items-center justify-center text-xs text-white"
                   >
                     ✕
                   </button>
@@ -723,65 +690,72 @@ export default function Dashboard() {
             </span>
           )}
         </div>
-      </div>
-
-      {/* Sesong navigering - minimalistisk */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigateSeason('prev')}
-          disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1}
-          className="p-1.5 text-text-muted hover:text-text-primary transition-colors disabled:opacity-30"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div className="text-center">
-          <div className="text-sm font-semibold text-primary-400">
-            {selectedSeason}
-          </div>
-          <div className="text-xs text-text-muted">
-            {seasonStats.total_hunts} turer • {seasonStats.total_seen} sett • {seasonStats.total_harvested} felt
-          </div>
         </div>
-
-        <button
-          onClick={() => navigateSeason('next')}
-          disabled={availableSeasons.indexOf(selectedSeason) === 0}
-          className="p-1.5 text-text-muted hover:text-text-primary transition-colors disabled:opacity-30"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
       </div>
 
-      {/* Statistikk per sted */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xs font-medium text-text-muted uppercase tracking-wide">Per sted</h3>
+      {/* Sesong og statistikk - egen synlig boks */}
+      <div className="p-4 bg-background-lighter/30 rounded-xl">
+        <div className="flex items-center justify-between mb-4">
           <button
-            onClick={() => navigate('/statistics')}
-            className="text-xs text-primary-400 hover:text-primary-300"
+            onClick={() => navigateSeason('prev')}
+            disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1}
+            className="p-2 text-text-muted hover:text-primary-400 transition-colors disabled:opacity-30"
           >
-            Hundestatistikk →
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <div className="text-center">
+            <div className="text-lg font-bold text-primary-400 mb-1">
+              Sesong {selectedSeason}
+            </div>
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <span className="text-text-primary font-medium">{seasonStats.total_hunts} turer</span>
+              <span className="text-text-muted">•</span>
+              <span className="text-primary-400">{seasonStats.total_seen} sett</span>
+              <span className="text-text-muted">•</span>
+              <span className="text-success">{seasonStats.total_harvested} felt</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigateSeason('next')}
+            disabled={availableSeasons.indexOf(selectedSeason) === 0}
+            className="p-2 text-text-muted hover:text-primary-400 transition-colors disabled:opacity-30"
+          >
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {recentLocations.map((loc) => {
-            const locHunts = filteredHunts.filter((h) => h.location.name === loc);
-            const locSeen = locHunts.reduce((acc, h) => acc + h.game_seen.reduce((a, g) => a + g.count, 0), 0);
-            const locHarvested = locHunts.reduce((acc, h) => acc + h.game_harvested.reduce((a, g) => a + g.count, 0), 0);
-            return (
-              <button
-                key={loc}
-                onClick={() => setSearchQuery(loc)}
-                className="text-left p-2 rounded bg-background-lighter/50 hover:bg-background-lighter transition-colors"
-              >
-                <div className="text-xs font-medium text-text-primary truncate">{loc}</div>
-                <div className="text-xs text-text-muted">
-                  {locHunts.length}t • {locSeen}s • {locHarvested}f
-                </div>
-              </button>
-            );
-          })}
+
+        {/* Statistikk per sted */}
+        <div className="pt-3 border-t border-background-lighter">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-text-primary">Per sted</h3>
+            <button
+              onClick={() => navigate('/statistics')}
+              className="text-xs text-primary-400 hover:text-primary-300"
+            >
+              Hundestatistikk →
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {recentLocations.map((loc) => {
+              const locHunts = filteredHunts.filter((h) => h.location.name === loc);
+              const locSeen = locHunts.reduce((acc, h) => acc + h.game_seen.reduce((a, g) => a + g.count, 0), 0);
+              const locHarvested = locHunts.reduce((acc, h) => acc + h.game_harvested.reduce((a, g) => a + g.count, 0), 0);
+              return (
+                <button
+                  key={loc}
+                  onClick={() => setSearchQuery(loc)}
+                  className="text-left p-3 rounded-lg bg-background/50 hover:bg-background transition-colors"
+                >
+                  <div className="text-sm font-medium text-text-primary truncate">{loc}</div>
+                  <div className="text-xs text-text-muted mt-1">
+                    {locHunts.length} turer • {locSeen}s • {locHarvested}f
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

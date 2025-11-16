@@ -24,6 +24,7 @@ import Modal from '../components/common/Modal';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import HuntMap from '../components/maps/HuntMap';
 import PhotoGallery from '../components/gallery/PhotoGallery';
+import toast from 'react-hot-toast';
 import type { Hunt, Track } from '../types';
 
 // Mock-data
@@ -202,7 +203,14 @@ export default function HuntDetail() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button className="btn-ghost btn-icon-sm">
+          <button
+            className="btn-ghost btn-icon-sm"
+            onClick={() => {
+              const shareUrl = `${window.location.origin}/share/${hunt.id}`;
+              navigator.clipboard.writeText(shareUrl);
+              toast.success('Delingslenke kopiert!');
+            }}
+          >
             <Share2 className="w-4 h-4" />
           </button>
           <button className="btn-ghost btn-icon-sm">
