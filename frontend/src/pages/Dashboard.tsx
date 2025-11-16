@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -366,16 +366,27 @@ export default function Dashboard() {
     }
   };
 
-  // Automatisk synkroniser med Garmin når hund velges
+  // Ref for å spore om initial sync er gjort
+  const hasInitialSynced = useRef(false);
+
+  // Automatisk synkroniser med Garmin når hund velges eller ved første innlasting
   useEffect(() => {
-    if (selectedDog && !matchedTrack) {
+    if (selectedDog && !matchedTrack && !isSyncing) {
+      // Sjekk om dette er initial mount eller en endring
+      const isInitialMount = !hasInitialSynced.current;
+
+      if (isInitialMount) {
+        hasInitialSynced.current = true;
+      }
+
       // Vent litt før automatisk synk for å unngå spam
       const timer = setTimeout(() => {
         handleGarminSync(true); // Silent sync
-      }, 300);
+      }, isInitialMount ? 500 : 300); // Litt lengre delay ved første innlasting
+
       return () => clearTimeout(timer);
     }
-  }, [selectedDog]);
+  }, [selectedDog, matchedTrack, isSyncing]);
 
   const handleQuickSave = async () => {
     if (!selectedDog) {
