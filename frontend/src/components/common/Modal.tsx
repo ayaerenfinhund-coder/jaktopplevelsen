@@ -64,7 +64,7 @@ export default function Modal({
               <button
                 onClick={onClose}
                 className="btn-ghost btn-icon-sm ml-auto"
-                aria-label="Close modal"
+                aria-label="Lukk"
               >
                 <X className="w-5 h-5" />
               </button>

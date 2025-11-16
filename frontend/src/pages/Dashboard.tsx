@@ -187,7 +187,7 @@ export default function Dashboard() {
           leftIcon={<Filter className="w-5 h-5" />}
           onClick={() => setShowFilters(!showFilters)}
         >
-          Filter
+          Filtrer
         </Button>
       </div>
 

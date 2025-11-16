@@ -20,9 +20,9 @@ export default function LoadingSpinner({
     <div
       className={clsx('spinner', sizeClasses[size], className)}
       role="status"
-      aria-label="Loading"
+      aria-label="Laster"
     >
-      <span className="sr-only">Loading...</span>
+      <span className="sr-only">Laster...</span>
     </div>
   );
 }
