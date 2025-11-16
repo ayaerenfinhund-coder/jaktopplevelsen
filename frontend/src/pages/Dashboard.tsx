@@ -765,7 +765,7 @@ export default function Dashboard() {
           </button>
 
           <div className="text-center">
-            <div className="text-lg font-bold text-primary-400 mb-1">
+            <div className="text-xl font-bold text-text-primary mb-1">
               Sesong {selectedSeason}
             </div>
             <div className="flex items-center justify-center gap-4 text-sm">
