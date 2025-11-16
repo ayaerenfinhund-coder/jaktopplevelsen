@@ -11,7 +11,7 @@ import {
   ScaleControl,
 } from 'react-leaflet';
 import { LatLngBounds, Icon } from 'leaflet';
-import { Layers, MapPin, Mountain, Trees, Home } from 'lucide-react';
+import { Layers, MapPin, Mountain, Trees, Home, Maximize2, Minimize2 } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import type { Track } from '../../types';
 
@@ -36,6 +36,7 @@ interface HuntMapProps {
   zoom?: number;
   showControls?: boolean;
   animationTime?: number;
+  initialHeight?: 'small' | 'medium' | 'large';
 }
 
 // Komponent for å tilpasse kartvisningen til sporene
@@ -84,12 +85,12 @@ const MAP_LAYERS = {
     attribution: '© <a href="https://kartverket.no">Kartverket</a>',
     maxZoom: 20,
   },
-  // Flyfoto fra Norge i Bilder
+  // Flyfoto - ESRI World Imagery (fungerer uten API-nøkkel)
   flyfoto: {
     name: 'Flyfoto',
-    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/nib/default/webmercator/{z}/{y}/{x}.jpeg',
-    attribution: '© <a href="https://norgeibilder.no">Norge i bilder</a>',
-    maxZoom: 20,
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© <a href="https://www.esri.com">Esri</a>, Maxar, Earthstar Geographics',
+    maxZoom: 19,
   },
   // OpenTopoMap som backup
   openTopo: {
@@ -120,10 +121,24 @@ export default function HuntMap({
   zoom = 12,
   showControls = true,
   animationTime = 100,
+  initialHeight = 'small',
 }: HuntMapProps) {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showPropertyBoundaries, setShowPropertyBoundaries] = useState(false);
   const [showLandUse, setShowLandUse] = useState(false);
+  const [mapHeight, setMapHeight] = useState<'small' | 'medium' | 'large'>(initialHeight);
+
+  const heightClasses = {
+    small: 'h-[300px]',
+    medium: 'h-[450px]',
+    large: 'h-[600px]',
+  };
+
+  const cycleHeight = () => {
+    if (mapHeight === 'small') setMapHeight('medium');
+    else if (mapHeight === 'medium') setMapHeight('large');
+    else setMapHeight('small');
+  };
 
   const getVisibleCoordinates = (track: Track) => {
     if (animationTime >= 100) {
@@ -144,11 +159,11 @@ export default function HuntMap({
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className={`relative w-full ${heightClasses[mapHeight]} transition-all duration-300`}>
       <MapContainer
         center={center}
         zoom={zoom}
-        className="w-full h-full"
+        className="w-full h-full rounded-lg"
         zoomControl={showControls}
         attributionControl={true}
       >
@@ -396,6 +411,22 @@ export default function HuntMap({
           <span>Norges offisielle kartdata fra Kartverket</span>
         </div>
       </div>
+
+      {/* Størrelse-kontroll */}
+      <button
+        onClick={cycleHeight}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background-light/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg z-[1000] flex items-center gap-2 hover:bg-background-lighter transition-colors"
+        title={mapHeight === 'large' ? 'Gjør kartet mindre' : 'Gjør kartet større'}
+      >
+        {mapHeight === 'large' ? (
+          <Minimize2 className="w-4 h-4 text-text-muted" />
+        ) : (
+          <Maximize2 className="w-4 h-4 text-text-muted" />
+        )}
+        <span className="text-sm text-text-primary">
+          {mapHeight === 'small' ? 'Større kart' : mapHeight === 'medium' ? 'Fullskjerm' : 'Mindre kart'}
+        </span>
+      </button>
     </div>
   );
 }
