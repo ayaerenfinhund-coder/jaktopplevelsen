@@ -5,7 +5,6 @@ import {
   Clock,
   MapPin,
   Dog,
-  Camera,
   Thermometer,
   Wind,
   Eye,
@@ -41,8 +40,8 @@ const mockSharedHunt: Hunt = {
   },
   game_type: ['roe_deer', 'hare'],
   game_seen: [
-    { type: 'roe_deer', count: 2 },
-    { type: 'hare', count: 1 },
+    { type: 'roe_deer', count: 2, time: '08:30' },
+    { type: 'hare', count: 1, time: '09:15' },
   ],
   game_harvested: [],
   dogs: ['rolex'],
@@ -60,15 +59,12 @@ const mockTracks: Track[] = [
     id: 'track1',
     hunt_id: '1',
     dog_id: 'rolex',
-    dog_name: 'Rolex',
+    name: 'Rolex - Storeberg',
+    source: 'garmin',
     color: '#D4752E',
     start_time: '07:00',
     end_time: '11:30',
-    distance_km: 8.3,
-    duration_minutes: 270,
-    avg_speed_kmh: 1.8,
-    max_speed_kmh: 12.5,
-    elevation_gain: 245,
+    created_at: '2024-11-10T11:30:00Z',
     geojson: {
       type: 'LineString',
       coordinates: [
@@ -80,6 +76,17 @@ const mockTracks: Track[] = [
         [10.45, 59.892],
         [10.451, 59.891],
       ],
+    },
+    statistics: {
+      distance_km: 8.3,
+      duration_minutes: 270,
+      avg_speed_kmh: 1.8,
+      max_speed_kmh: 12.5,
+      elevation_gain_m: 245,
+      elevation_loss_m: 180,
+      min_elevation_m: 150,
+      max_elevation_m: 395,
+      bounding_box: [[59.891, 10.45], [59.895, 10.455]],
     },
   },
 ];
@@ -227,14 +234,14 @@ export default function PublicHuntView() {
               <div className="card p-4 text-center">
                 <Dog className="w-5 h-5 text-accent-400 mx-auto mb-1" />
                 <p className="text-xl font-bold text-text-primary">
-                  {tracks[0].distance_km.toFixed(1)} km
+                  {tracks[0].statistics.distance_km.toFixed(1)} km
                 </p>
                 <p className="text-xs text-text-muted">Distanse</p>
               </div>
               <div className="card p-4 text-center">
                 <Clock className="w-5 h-5 text-text-muted mx-auto mb-1" />
                 <p className="text-xl font-bold text-text-primary">
-                  {Math.floor(tracks[0].duration_minutes / 60)}t {tracks[0].duration_minutes % 60}m
+                  {Math.floor(tracks[0].statistics.duration_minutes / 60)}t {tracks[0].statistics.duration_minutes % 60}m
                 </p>
                 <p className="text-xs text-text-muted">Varighet</p>
               </div>
@@ -307,22 +314,25 @@ export default function PublicHuntView() {
           <div className="card p-4">
             <h3 className="text-sm font-medium text-text-muted mb-3">Hunder</h3>
             <div className="space-y-2">
-              {tracks.map((track) => (
-                <div key={track.id} className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                    style={{ backgroundColor: track.color }}
-                  >
-                    {track.dog_name.charAt(0)}
+              {tracks.map((track) => {
+                const dogName = track.name.split(' - ')[0];
+                return (
+                  <div key={track.id} className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                      style={{ backgroundColor: track.color }}
+                    >
+                      {dogName.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-text-primary">{dogName}</p>
+                      <p className="text-xs text-text-muted">
+                        {track.statistics.distance_km.toFixed(1)} km • {Math.floor(track.statistics.duration_minutes / 60)}t {track.statistics.duration_minutes % 60}m
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-text-primary">{track.dog_name}</p>
-                    <p className="text-xs text-text-muted">
-                      {track.distance_km.toFixed(1)} km • {Math.floor(track.duration_minutes / 60)}t {track.duration_minutes % 60}m
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

@@ -18,7 +18,7 @@ interface PhotoGalleryProps {
 
 export default function PhotoGallery({
   photos,
-  onDeletePhoto,
+  onDeletePhoto: _onDeletePhoto,
 }: PhotoGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 

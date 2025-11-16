@@ -58,7 +58,7 @@ export default function NewHunt() {
 
     try {
       // Automatisk tittel hvis ikke satt
-      const finalTitle =
+      const _finalTitle =
         title.trim() ||
         `Jakttur ${locationName} - ${new Date(date).toLocaleDateString('nb-NO')}`;
 

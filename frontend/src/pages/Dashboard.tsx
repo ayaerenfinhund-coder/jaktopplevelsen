@@ -3,28 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
   Filter,
-  Calendar,
   MapPin,
   Dog,
   Camera,
-  MoreVertical,
-  TrendingUp,
   Send,
   RefreshCw,
   CheckCircle,
-  Route,
   Thermometer,
   Wind,
   Target,
   Eye,
   ChevronLeft,
   ChevronRight,
-  BarChart3,
   Image,
+  Download,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
-import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Modal from '../components/common/Modal';
 import toast from 'react-hot-toast';
@@ -56,8 +51,8 @@ const mockHunts: Hunt[] = [
     },
     game_type: ['roe_deer', 'hare'],
     game_seen: [
-      { type: 'roe_deer', count: 2 },
-      { type: 'hare', count: 1 },
+      { type: 'roe_deer', count: 2, time: '08:30' },
+      { type: 'hare', count: 1, time: '09:15' },
     ],
     game_harvested: [],
     dogs: ['rolex'],
@@ -83,8 +78,8 @@ const mockHunts: Hunt[] = [
       coordinates: [59.89, 10.45],
     },
     game_type: ['hare'],
-    game_seen: [{ type: 'hare', count: 3 }],
-    game_harvested: [{ type: 'hare', count: 1 }],
+    game_seen: [{ type: 'hare', count: 3, time: '15:30' }],
+    game_harvested: [{ type: 'hare', count: 1, time: '16:00' }],
     dogs: ['rolex'],
     tracks: [],
     photos: [],
@@ -108,8 +103,8 @@ const mockHunts: Hunt[] = [
       coordinates: [59.89, 10.45],
     },
     game_type: ['roe_deer'],
-    game_seen: [{ type: 'roe_deer', count: 4 }],
-    game_harvested: [{ type: 'roe_deer', count: 1 }],
+    game_seen: [{ type: 'roe_deer', count: 4, time: '08:00' }],
+    game_harvested: [{ type: 'roe_deer', count: 1, time: '10:30' }],
     dogs: ['rolex'],
     tracks: [],
     photos: [],
@@ -198,8 +193,8 @@ function getHuntingSeason(date: string): string {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [hunts, setHunts] = useState<Hunt[]>(mockHunts);
-  const [isLoading, setIsLoading] = useState(false);
+  const [hunts] = useState<Hunt[]>(mockHunts);
+  const [isLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -242,6 +237,34 @@ export default function Dashboard() {
 
   // Vilt-modal
   const [showGameModal, setShowGameModal] = useState(false);
+
+  // PWA Install
+  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+
+  // Listen for PWA install prompt
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const promptEvent = deferredPrompt as any;
+    promptEvent.prompt();
+    const result = await promptEvent.userChoice;
+    if (result.outcome === 'accepted') {
+      toast.success('App installert!');
+      setShowInstallButton(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   // Get available seasons from hunts
   const availableSeasons = Array.from(
@@ -411,7 +434,7 @@ export default function Dashboard() {
     setIsSavingQuickNote(true);
 
     try {
-      const location = selectedLocation || customLocation;
+      const _location = selectedLocation || customLocation;
       if (customLocation && !recentLocations.includes(customLocation)) {
         localStorage.setItem('lastLocation', customLocation);
       }
@@ -724,7 +747,7 @@ export default function Dashboard() {
         <div className="flex flex-col items-center gap-2">
           {!matchedTrack && (
             <button
-              onClick={handleGarminSync}
+              onClick={() => handleGarminSync()}
               disabled={isSyncing || !selectedDog}
               className="w-full max-w-sm flex items-center justify-center gap-2 py-2 text-sm text-text-muted hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -943,6 +966,19 @@ export default function Dashboard() {
           </button>
         </div>
       </Modal>
+
+      {/* PWA Install Button - Bottom Center */}
+      {showInstallButton && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <button
+            onClick={handleInstallApp}
+            className="flex items-center gap-3 px-6 py-3 bg-primary-700 hover:bg-primary-600 text-white rounded-full shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95"
+          >
+            <Download className="w-5 h-5" />
+            <span className="font-semibold">Installer som app</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

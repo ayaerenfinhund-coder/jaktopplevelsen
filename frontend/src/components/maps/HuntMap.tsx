@@ -11,7 +11,7 @@ import {
   ScaleControl,
 } from 'react-leaflet';
 import { LatLngBounds, Icon } from 'leaflet';
-import { Layers, MapPin, Mountain, Trees, Home, Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import type { Track } from '../../types';
 

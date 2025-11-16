@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -10,11 +10,9 @@ import {
   Share2,
   Edit3,
   Trash2,
-  Cloud,
   Wind,
   Thermometer,
   ChevronDown,
-  ChevronUp,
   Eye,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -122,11 +120,11 @@ const mockDogs = [
 ];
 
 export default function HuntDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { id: _id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [hunt, setHunt] = useState<Hunt | null>(mockHunt);
-  const [tracks, setTracks] = useState<Track[]>(mockTracks);
-  const [isLoading, setIsLoading] = useState(false);
+  const [tracks] = useState<Track[]>(mockTracks);
+  const [isLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesText, setNotesText] = useState(mockHunt.notes);

@@ -10,7 +10,6 @@ import {
   Route,
   Calendar,
   Target,
-  Eye,
   Zap,
 } from 'lucide-react';
 import { format } from 'date-fns';
