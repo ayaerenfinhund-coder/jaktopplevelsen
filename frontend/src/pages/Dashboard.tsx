@@ -128,67 +128,53 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Overskrift */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary">Oversikt</h1>
-          <p className="text-text-secondary mt-1">
-            Velkommen tilbake! Her er dine siste jaktturer.
+      {/* HOVEDFORMÅL: Registrer ny jakttur */}
+      <div className="card p-8 bg-gradient-to-br from-primary-700/20 via-primary-700/10 to-transparent border-2 border-primary-700/40">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-text-primary mb-2">
+            Registrer dagens jakt
+          </h1>
+          <p className="text-text-muted">
+            Rolex • Semsvannet •{' '}
+            {new Date().toLocaleDateString('nb-NO', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+            })}
           </p>
         </div>
-        <Link to="/hunt/new">
-          <Button variant="primary" size="lg" leftIcon={<Plus className="w-5 h-5" />}>
-            Ny jakttur
-          </Button>
-        </Link>
-      </div>
 
-      {/* HURTIGNOTAT - rask logging */}
-      <div className="card p-6 bg-gradient-to-br from-primary-700/10 to-transparent border-primary-700/30">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-primary-700/30 rounded-lg flex items-center justify-center">
-            <Edit3 className="w-5 h-5 text-primary-400" />
-          </div>
-          <div>
-            <h2 className="font-semibold text-text-primary">Hurtignotat</h2>
-            <p className="text-sm text-text-muted">
-              Logg dagens jakt med Rolex ved Semsvannet
-            </p>
-          </div>
-        </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <textarea
             value={quickNote}
             onChange={(e) => setQuickNote(e.target.value)}
-            placeholder="Skriv om jakten i dag... Hvordan jobbet Rolex? Hva så dere? Hvordan var forholdene?"
-            className="input min-h-[120px] w-full font-normal resize-y"
+            placeholder="Skriv om jakten...&#10;&#10;Hvordan jobbet Rolex i dag?&#10;Hva observerte dere?&#10;Hvordan var terrenget og forholdene?"
+            className="input min-h-[200px] w-full font-normal text-base leading-relaxed resize-y"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleQuickSave();
               }
             }}
+            autoFocus
           />
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-text-muted">
-              Trykk ⌘+Enter for å lagre raskt
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-text-muted">
+              ⌘+Enter for å lagre • Notater kan alltid redigeres senere
             </p>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/hunt/new')}
-              >
-                Flere detaljer
+            <div className="flex gap-3">
+              <Button variant="outline" size="lg" onClick={() => navigate('/hunt/new')}>
+                Legg til detaljer
               </Button>
               <Button
                 variant="primary"
-                size="sm"
-                leftIcon={<Send className="w-4 h-4" />}
+                size="lg"
+                leftIcon={<Send className="w-5 h-5" />}
                 onClick={handleQuickSave}
                 isLoading={isSavingQuickNote}
                 disabled={!quickNote.trim()}
               >
-                Lagre
+                Lagre jakttur
               </Button>
             </div>
           </div>
