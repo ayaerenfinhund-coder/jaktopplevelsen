@@ -93,6 +93,10 @@ const stats = {
   active_dogs: 1,
 };
 
+// Mock data for dogs and locations
+const mockDogs = [{ id: 'rolex', name: 'Rolex', breed: 'Dachs' }];
+const recentLocations = ['Semsvannet', 'Nordmarka', 'Romeriksåsen'];
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [hunts, setHunts] = useState<Hunt[]>(mockHunts);
@@ -100,19 +104,50 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Hurtignotat
+  // Hurtignotat med intelligente standardverdier
   const [quickNote, setQuickNote] = useState('');
   const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
+  const [selectedDog, setSelectedDog] = useState(() => {
+    return localStorage.getItem('lastDog') || mockDogs[0]?.id || '';
+  });
+  const [selectedLocation, setSelectedLocation] = useState(() => {
+    return localStorage.getItem('lastLocation') || '';
+  });
+  const [customLocation, setCustomLocation] = useState('');
+
+  // Oppdater localStorage når valg endres
+  useEffect(() => {
+    if (selectedDog) localStorage.setItem('lastDog', selectedDog);
+    if (selectedLocation) localStorage.setItem('lastLocation', selectedLocation);
+  }, [selectedDog, selectedLocation]);
+
+  const currentDogName = mockDogs.find((d) => d.id === selectedDog)?.name || 'Velg hund';
+  const currentLocation = selectedLocation || customLocation || 'Velg sted';
 
   const handleQuickSave = async () => {
     if (!quickNote.trim()) return;
+    if (!selectedDog) {
+      toast.error('Velg en hund først');
+      return;
+    }
+    if (!selectedLocation && !customLocation) {
+      toast.error('Velg eller skriv inn et sted');
+      return;
+    }
+
     setIsSavingQuickNote(true);
 
     try {
+      const location = selectedLocation || customLocation;
+      // Lagre nytt sted i localStorage
+      if (customLocation && !recentLocations.includes(customLocation)) {
+        localStorage.setItem('lastLocation', customLocation);
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 500));
       toast.success('Jakttur lagret!');
       setQuickNote('');
-      // I virkeligheten ville vi oppdatere listen her
+      setCustomLocation('');
     } catch (error) {
       toast.error('Kunne ikke lagre');
     } finally {
@@ -135,27 +170,86 @@ export default function Dashboard() {
             Registrer dagens jakt
           </h1>
           <p className="text-text-muted">
-            Rolex • Semsvannet •{' '}
             {new Date().toLocaleDateString('nb-NO', {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
+              year: 'numeric',
             })}
           </p>
+        </div>
+
+        {/* Velg hund og sted */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="input-label flex items-center gap-2">
+              <Dog className="w-4 h-4 text-primary-400" />
+              Hund
+            </label>
+            <select
+              value={selectedDog}
+              onChange={(e) => setSelectedDog(e.target.value)}
+              className="select"
+            >
+              <option value="">Velg hund</option>
+              {mockDogs.map((dog) => (
+                <option key={dog.id} value={dog.id}>
+                  {dog.name} ({dog.breed})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="input-label flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-primary-400" />
+              Sted
+            </label>
+            {selectedLocation === '_custom' ? (
+              <input
+                type="text"
+                value={customLocation}
+                onChange={(e) => setCustomLocation(e.target.value)}
+                placeholder="Skriv inn sted..."
+                className="input"
+                autoFocus
+              />
+            ) : (
+              <select
+                value={selectedLocation}
+                onChange={(e) => {
+                  if (e.target.value === '_custom') {
+                    setSelectedLocation('_custom');
+                    setCustomLocation('');
+                  } else {
+                    setSelectedLocation(e.target.value);
+                  }
+                }}
+                className="select"
+              >
+                <option value="">Velg sted</option>
+                {recentLocations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+                <option value="_custom">+ Nytt sted...</option>
+              </select>
+            )}
+          </div>
         </div>
 
         <div className="space-y-4">
           <textarea
             value={quickNote}
             onChange={(e) => setQuickNote(e.target.value)}
-            placeholder="Skriv om jakten...&#10;&#10;Hvordan jobbet Rolex i dag?&#10;Hva observerte dere?&#10;Hvordan var terrenget og forholdene?"
+            placeholder={`Skriv om jakten...\n\nHvordan jobbet ${currentDogName !== 'Velg hund' ? currentDogName : 'hunden'} i dag?\nHva observerte dere?\nHvordan var terrenget og forholdene?`}
             className="input min-h-[200px] w-full font-normal text-base leading-relaxed resize-y"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleQuickSave();
               }
             }}
-            autoFocus
           />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -172,7 +266,7 @@ export default function Dashboard() {
                 leftIcon={<Send className="w-5 h-5" />}
                 onClick={handleQuickSave}
                 isLoading={isSavingQuickNote}
-                disabled={!quickNote.trim()}
+                disabled={!quickNote.trim() || !selectedDog || (!selectedLocation && !customLocation)}
               >
                 Lagre jakttur
               </Button>
