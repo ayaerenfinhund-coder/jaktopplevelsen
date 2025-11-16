@@ -3,12 +3,11 @@ import {
   Home,
   MapPin,
   Dog,
-  Settings,
   Calendar,
   BarChart3,
   Download,
   X,
-  Heart,
+  Camera,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -20,13 +19,12 @@ interface SidebarProps {
 const navigation = [
   { name: 'Oversikt', href: '/', icon: Home },
   { name: 'Hunder', href: '/dogs', icon: Dog },
-  { name: 'Innstillinger', href: '/settings', icon: Settings },
+  { name: 'Statistikk', href: '/statistics', icon: BarChart3 },
 ];
 
 const quickFilters = [
   { name: 'Denne sesongen', icon: Calendar, count: 8 },
-  { name: 'Favoritter', icon: Heart, count: 3 },
-  { name: 'Med bilder', icon: MapPin, count: 12 },
+  { name: 'Med bilder', icon: Camera, count: 12 },
 ];
 
 const stats = [

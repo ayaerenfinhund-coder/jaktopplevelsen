@@ -235,19 +235,48 @@ export default function Dashboard() {
   const [matchedTrack, setMatchedTrack] = useState<GarminTrack | null>(null);
   const [showTrackConfirm, setShowTrackConfirm] = useState(false);
 
+  // Bilder
+  const [photos, setPhotos] = useState<string[]>([]);
+
   // Get available seasons from hunts
   const availableSeasons = Array.from(
     new Set(hunts.map((h) => getHuntingSeason(h.date)))
   ).sort().reverse();
 
-  // Hent vær automatisk når sted velges
+  // Hent vær automatisk når sted velges (med geokoding for egendefinerte steder)
   useEffect(() => {
     const fetchWeather = async () => {
       const loc = selectedLocation || customLocation;
       if (!loc || loc === '_custom') return;
 
-      const coords = locationCoords[loc];
-      if (!coords) return;
+      // Sjekk om vi har koordinater for dette stedet
+      let coords = locationCoords[loc];
+
+      // Hvis ikke, prøv å geokode stedsnavnet
+      if (!coords && customLocation && customLocation.length > 2) {
+        setIsLoadingWeather(true);
+        try {
+          // Bruk Kartverket stedsnavn-API for å finne koordinater
+          const searchUrl = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodeURIComponent(customLocation)}&maxAnt=1&filtrer=navn`;
+          const searchResp = await fetch(searchUrl);
+          if (searchResp.ok) {
+            const searchData = await searchResp.json();
+            if (searchData.navn && searchData.navn.length > 0) {
+              const place = searchData.navn[0];
+              if (place.representasjonspunkt) {
+                coords = [place.representasjonspunkt.nord, place.representasjonspunkt.øst];
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Kunne ikke geokode sted:', error);
+        }
+      }
+
+      if (!coords) {
+        setIsLoadingWeather(false);
+        return;
+      }
 
       setIsLoadingWeather(true);
       try {
@@ -267,7 +296,9 @@ export default function Dashboard() {
       }
     };
 
-    fetchWeather();
+    // Debounce for customLocation
+    const timer = setTimeout(fetchWeather, customLocation ? 500 : 0);
+    return () => clearTimeout(timer);
   }, [selectedLocation, customLocation]);
 
   // Oppdater localStorage
@@ -357,6 +388,7 @@ export default function Dashboard() {
       setShowTrackConfirm(false);
       setGameSeen({});
       setGameHarvested({});
+      setPhotos([]);
     } catch (error) {
       toast.error('Kunne ikke lagre');
     } finally {
@@ -418,16 +450,16 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Registrer jakttur */}
-      <div className="card p-6 bg-gradient-to-br from-primary-700/20 to-transparent border-2 border-primary-700/40">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-text-primary">Registrer jakttur</h1>
-          <p className="text-sm text-text-muted">
+      <div className="card p-4 bg-gradient-to-br from-primary-700/10 to-transparent border border-primary-700/30">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-lg font-bold text-text-primary">Registrer jakttur</h1>
+          <span className="text-xs text-text-muted">
             {new Date().toLocaleDateString('nb-NO', {
-              weekday: 'long',
+              weekday: 'short',
               day: 'numeric',
-              month: 'long',
+              month: 'short',
             })}
-          </p>
+          </span>
         </div>
 
         {/* Hund og Sted */}
@@ -500,29 +532,29 @@ export default function Dashboard() {
           <div className="text-xs text-text-muted mb-4">Henter vær fra yr.no...</div>
         )}
 
-        {/* Observasjoner og Skutt - større og mer lesbar */}
-        <div className="grid grid-cols-2 gap-6 mb-6">
+        {/* Observasjoner og Skutt - kompakt */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="text-sm font-medium text-text-primary mb-3 flex items-center gap-2">
-              <Eye className="w-4 h-4 text-primary-400" /> Observert
+            <label className="text-xs font-medium text-text-muted mb-2 flex items-center gap-1">
+              <Eye className="w-3 h-3" /> Observert
             </label>
-            <div className="space-y-3">
+            <div className="space-y-1">
               {gameTypes.slice(0, 4).map((game) => (
                 <div key={game.id} className="flex items-center justify-between">
-                  <span className="text-base text-text-primary">{game.name}</span>
-                  <div className="flex items-center gap-3">
+                  <span className="text-sm text-text-primary">{game.name}</span>
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => updateGameCount(setGameSeen, game.id, -1)}
-                      className="w-8 h-8 rounded-lg bg-background-lighter text-text-primary hover:bg-background-light text-lg font-medium"
+                      className="w-6 h-6 rounded border border-border text-text-primary hover:bg-background-lighter text-sm"
                     >
                       -
                     </button>
-                    <span className="w-8 text-center text-lg font-bold text-text-primary">
+                    <span className="w-6 text-center text-sm font-semibold text-text-primary">
                       {gameSeen[game.id] || 0}
                     </span>
                     <button
                       onClick={() => updateGameCount(setGameSeen, game.id, 1)}
-                      className="w-8 h-8 rounded-lg bg-background-lighter text-text-primary hover:bg-background-light text-lg font-medium"
+                      className="w-6 h-6 rounded border border-border text-text-primary hover:bg-background-lighter text-sm"
                     >
                       +
                     </button>
@@ -533,26 +565,26 @@ export default function Dashboard() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-text-primary mb-3 flex items-center gap-2">
-              <Target className="w-4 h-4 text-success" /> Skutt
+            <label className="text-xs font-medium text-text-muted mb-2 flex items-center gap-1">
+              <Target className="w-3 h-3" /> Skutt
             </label>
-            <div className="space-y-3">
+            <div className="space-y-1">
               {gameTypes.slice(0, 4).map((game) => (
                 <div key={game.id} className="flex items-center justify-between">
-                  <span className="text-base text-text-primary">{game.name}</span>
-                  <div className="flex items-center gap-3">
+                  <span className="text-sm text-text-primary">{game.name}</span>
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
-                      className="w-8 h-8 rounded-lg bg-background-lighter text-text-primary hover:bg-background-light text-lg font-medium"
+                      className="w-6 h-6 rounded border border-border text-text-primary hover:bg-background-lighter text-sm"
                     >
                       -
                     </button>
-                    <span className="w-8 text-center text-lg font-bold text-text-primary">
+                    <span className="w-6 text-center text-sm font-semibold text-text-primary">
                       {gameHarvested[game.id] || 0}
                     </span>
                     <button
                       onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
-                      className="w-8 h-8 rounded-lg bg-background-lighter text-text-primary hover:bg-background-light text-lg font-medium"
+                      className="w-6 h-6 rounded border border-border text-text-primary hover:bg-background-lighter text-sm"
                     >
                       +
                     </button>
@@ -568,13 +600,72 @@ export default function Dashboard() {
           value={quickNote}
           onChange={(e) => setQuickNote(e.target.value)}
           placeholder={`Notater om jakten...\nHvordan jobbet ${currentDogName !== 'Velg hund' ? currentDogName : 'hunden'}?`}
-          className="input min-h-[100px] w-full text-sm mb-4"
+          className="input min-h-[80px] w-full text-sm mb-4"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               handleQuickSave();
             }
           }}
         />
+
+        {/* Bilder */}
+        <div className="mb-4">
+          <label className="text-xs text-text-muted mb-2 block">Bilder</label>
+          <div className="flex items-center gap-2">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files) {
+                    const newPhotos: string[] = [];
+                    Array.from(files).forEach((file) => {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        if (ev.target?.result) {
+                          newPhotos.push(ev.target.result as string);
+                          if (newPhotos.length === files.length) {
+                            setPhotos((prev) => [...prev, ...newPhotos]);
+                          }
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                  }
+                }}
+              />
+              <div className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg hover:bg-background-lighter transition-colors text-sm">
+                <Camera className="w-4 h-4 text-text-muted" />
+                <span className="text-text-secondary">Legg til bilder</span>
+              </div>
+            </label>
+            {photos.length > 0 && (
+              <span className="text-xs text-text-muted">{photos.length} bilde(r)</span>
+            )}
+          </div>
+          {photos.length > 0 && (
+            <div className="flex gap-2 mt-2 overflow-x-auto pb-2">
+              {photos.map((photo, i) => (
+                <div key={i} className="relative flex-shrink-0">
+                  <img
+                    src={photo}
+                    alt={`Bilde ${i + 1}`}
+                    className="w-16 h-16 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-background-lighter rounded-full flex items-center justify-center text-xs hover:bg-error hover:text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* GPS-spor */}
         {showTrackConfirm && matchedTrack && (
@@ -602,37 +693,30 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Sentrerte knapper */}
-        <div className="flex flex-col items-center gap-3">
+        {/* Sentrerte knapper - tynnere og finere */}
+        <div className="flex flex-col items-center gap-2">
           {!matchedTrack && (
-            <Button
-              variant="outline"
-              size="lg"
-              leftIcon={
-                <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
-              }
+            <button
               onClick={handleGarminSync}
               disabled={isSyncing || !selectedDog}
-              className="w-full max-w-sm"
+              className="w-full max-w-sm flex items-center justify-center gap-2 py-2 px-4 border border-border rounded-lg text-sm text-text-secondary hover:bg-background-lighter transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Synkroniserer...' : 'Synk med Garmin'}
-            </Button>
+            </button>
           )}
 
-          <Button
-            variant="primary"
-            size="lg"
-            leftIcon={<Send className="w-5 h-5" />}
+          <button
             onClick={handleQuickSave}
-            isLoading={isSavingQuickNote}
-            disabled={!selectedDog || (!selectedLocation && !customLocation)}
-            className="w-full max-w-sm"
+            disabled={isSavingQuickNote || !selectedDog || (!selectedLocation && !customLocation)}
+            className="w-full max-w-sm flex items-center justify-center gap-2 py-2 px-4 border border-primary-500 rounded-lg text-sm text-primary-400 hover:bg-primary-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Lagre jakttur
-          </Button>
+            <Send className="w-4 h-4" />
+            {isSavingQuickNote ? 'Lagrer...' : 'Lagre jakttur'}
+          </button>
 
           {(totalSeen > 0 || totalHarvested > 0) && (
-            <span className="text-sm text-text-muted">
+            <span className="text-xs text-text-muted">
               {totalSeen > 0 && `${totalSeen} observert`}
               {totalSeen > 0 && totalHarvested > 0 && ' • '}
               {totalHarvested > 0 && `${totalHarvested} felt`}
@@ -641,69 +725,65 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Sesong navigering */}
-      <div className="flex items-center justify-between">
+      {/* Sesong navigering - kompakt og tydelig */}
+      <div className="flex items-center justify-between bg-background-lighter/50 rounded-lg p-3 border border-border">
         <button
           onClick={() => navigateSeason('prev')}
           disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1}
-          className="btn-ghost btn-icon-sm disabled:opacity-30"
+          className="p-1.5 border border-border rounded hover:bg-background-lighter transition-colors disabled:opacity-30"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
         <div className="text-center">
-          <h2 className="text-lg font-bold text-text-primary">
+          <div className="text-sm font-bold text-text-primary">
             Sesong {selectedSeason}
-          </h2>
-          <p className="text-xs text-text-muted">
-            {seasonStats.total_hunts} turer • {seasonStats.total_seen} sett •{' '}
-            {seasonStats.total_harvested} felt
-          </p>
+          </div>
+          <div className="text-xs text-text-muted">
+            {seasonStats.total_hunts} turer • {seasonStats.total_seen} sett • {seasonStats.total_harvested} felt
+          </div>
         </div>
 
         <button
           onClick={() => navigateSeason('next')}
           disabled={availableSeasons.indexOf(selectedSeason) === 0}
-          className="btn-ghost btn-icon-sm disabled:opacity-30"
+          className="p-1.5 border border-border rounded hover:bg-background-lighter transition-colors disabled:opacity-30"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Hurtigstatistikk og detaljert statistikk-knapp */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="card p-4 text-center">
-          <TrendingUp className="w-5 h-5 text-primary-400 mx-auto mb-1" />
-          <p className="text-xl font-bold text-text-primary">
-            {seasonStats.total_hunts}
-          </p>
-          <p className="text-xs text-text-muted">Turer</p>
+      {/* Statistikk per sted */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-text-primary">Per sted</h3>
+          <button
+            onClick={() => navigate('/statistics')}
+            className="text-xs text-primary-400 hover:underline"
+          >
+            Hundestatistikk →
+          </button>
         </div>
-
-        <div className="card p-4 text-center">
-          <Eye className="w-5 h-5 text-accent-400 mx-auto mb-1" />
-          <p className="text-xl font-bold text-text-primary">{seasonStats.total_seen}</p>
-          <p className="text-xs text-text-muted">Observert</p>
-        </div>
-
-        <div className="card p-4 text-center">
-          <Target className="w-5 h-5 text-success mx-auto mb-1" />
-          <p className="text-xl font-bold text-text-primary">
-            {seasonStats.total_harvested}
-          </p>
-          <p className="text-xs text-text-muted">Felt</p>
+        <div className="grid grid-cols-3 gap-2">
+          {recentLocations.map((loc) => {
+            const locHunts = filteredHunts.filter((h) => h.location.name === loc);
+            const locSeen = locHunts.reduce((acc, h) => acc + h.game_seen.reduce((a, g) => a + g.count, 0), 0);
+            const locHarvested = locHunts.reduce((acc, h) => acc + h.game_harvested.reduce((a, g) => a + g.count, 0), 0);
+            return (
+              <button
+                key={loc}
+                onClick={() => setSearchQuery(loc)}
+                className="text-left p-2 rounded border border-border hover:bg-background-lighter transition-colors"
+              >
+                <div className="text-xs font-medium text-text-primary truncate">{loc}</div>
+                <div className="text-xs text-text-muted">
+                  {locHunts.length}t • {locSeen}s • {locHarvested}f
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
-
-      {/* Detaljert statistikk knapp */}
-      <Button
-        variant="outline"
-        className="w-full"
-        leftIcon={<BarChart3 className="w-4 h-4" />}
-        onClick={() => navigate('/statistics')}
-      >
-        Se detaljert statistikk for hund
-      </Button>
 
       {/* Søk */}
       <div className="flex gap-3">

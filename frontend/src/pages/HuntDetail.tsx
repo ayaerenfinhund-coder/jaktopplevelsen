@@ -7,7 +7,6 @@ import {
   MapPin,
   Dog,
   Camera,
-  Heart,
   Share2,
   Edit3,
   Trash2,
@@ -203,12 +202,6 @@ export default function HuntDetail() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => {}}
-            className={`btn-ghost btn-icon-sm ${hunt.is_favorite ? 'text-accent-500' : ''}`}
-          >
-            <Heart className={`w-4 h-4 ${hunt.is_favorite ? 'fill-accent-500' : ''}`} />
-          </button>
           <button className="btn-ghost btn-icon-sm">
             <Share2 className="w-4 h-4" />
           </button>

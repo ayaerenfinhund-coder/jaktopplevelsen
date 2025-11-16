@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Menu,
   Bell,
@@ -17,11 +17,24 @@ interface NavbarProps {
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSync = async () => {
     setIsSyncing(true);
     // Simulate Garmin sync
     setTimeout(() => setIsSyncing(false), 3000);
+  };
+
+  const handleNewHunt = () => {
+    if (location.pathname === '/') {
+      // Allerede på hovedsiden - scroll til toppen
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // Naviger til hovedsiden
+      navigate('/');
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+    }
   };
 
   return (
@@ -102,21 +115,21 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
               <RefreshCw className="w-5 h-5" />
             </button>
 
-            <Link
-              to="/hunt/new"
+            <button
+              onClick={handleNewHunt}
               className="btn-primary btn-sm hidden sm:inline-flex"
             >
               <Plus className="w-4 h-4 mr-2" />
               Ny jakttur
-            </Link>
+            </button>
 
-            <Link
-              to="/hunt/new"
+            <button
+              onClick={handleNewHunt}
               className="sm:hidden btn-primary btn-icon"
               aria-label="Ny jakttur"
             >
               <Plus className="w-5 h-5" />
-            </Link>
+            </button>
 
             <button
               className="btn-ghost btn-icon relative"
