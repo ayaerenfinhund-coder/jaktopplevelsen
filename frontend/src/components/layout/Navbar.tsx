@@ -39,7 +39,18 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             </button>
 
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-700 rounded-lg flex items-center justify-center">
+              <img
+                src="/logo.png"
+                alt="Jaktopplevelsen"
+                className="w-10 h-10 rounded-lg object-contain"
+                onError={(e) => {
+                  // Fallback til SVG hvis logo.png ikke finnes
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  target.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden w-10 h-10 bg-primary-700 rounded-lg items-center justify-center">
                 <svg
                   viewBox="0 0 24 24"
                   className="w-6 h-6 text-white"

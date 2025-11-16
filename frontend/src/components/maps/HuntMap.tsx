@@ -61,37 +61,42 @@ function MapBoundsUpdater({ tracks }: { tracks: Track[] }) {
   return null;
 }
 
-// Beste norske kartkilder for jakt
+// Beste kartkilder for jakt - detaljerte topografiske kart
 const MAP_LAYERS = {
-  // Norgeskart - offisielt topografisk kart
-  norgeskart: {
-    name: 'Norgeskart Topografisk',
-    url: 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}',
-    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
-  },
-  // Norgeskart gråtone - bedre for spor
-  norgeskartGray: {
-    name: 'Norgeskart Gråtone',
-    url: 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4graatone&zoom={z}&x={x}&y={y}',
-    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
-  },
-  // Norge i bilder - satellitt/flyfoto
-  satellite: {
-    name: 'Norge i Bilder (Flyfoto)',
-    url: 'https://waapi.webatlas.no/maptiles/tiles/webatlas-orto-newup/wa_grid/{z}/{x}/{y}.jpeg',
-    attribution: '© <a href="https://norgeibilder.no">Norge i bilder</a>',
-  },
-  // Turkart - spesialisert for friluftsliv
-  turkart: {
-    name: 'Turkart (Friluftsliv)',
-    url: 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster4&zoom={z}&x={x}&y={y}',
-    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
-  },
-  // OpenTopoMap som fallback
+  // OpenTopoMap - detaljert topografisk (fungerer best)
   openTopo: {
-    name: 'OpenTopoMap',
+    name: 'Topografisk (Detaljert)',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenTopoMap',
+    attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
+    maxZoom: 17,
+  },
+  // CyclOSM - svært detaljert med stier og høydelinjer
+  cyclOSM: {
+    name: 'Terreng & Stier',
+    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    attribution: '© <a href="https://www.cyclosm.org">CyclOSM</a> | OSM',
+    maxZoom: 20,
+  },
+  // Kartverket Topografisk
+  norgeskart: {
+    name: 'Norgeskart',
+    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png',
+    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
+    maxZoom: 18,
+  },
+  // OpenStreetMap standard for referanse
+  osm: {
+    name: 'Standard',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  },
+  // Satellitt fra ESRI (fungerer uten API-nøkkel)
+  satellite: {
+    name: 'Satellitt',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© <a href="https://www.esri.com">Esri</a>',
+    maxZoom: 19,
   },
 };
 
@@ -147,29 +152,37 @@ export default function HuntMap({
         zoomControl={showControls}
         attributionControl={true}
       >
-        {/* Norske kartalternativer */}
+        {/* Kartlag - OpenTopoMap som standard (beste detalj) */}
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name={MAP_LAYERS.norgeskart.name}>
+          <LayersControl.BaseLayer checked name={MAP_LAYERS.openTopo.name}>
+            <TileLayer
+              url={MAP_LAYERS.openTopo.url}
+              attribution={MAP_LAYERS.openTopo.attribution}
+              maxZoom={MAP_LAYERS.openTopo.maxZoom}
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name={MAP_LAYERS.cyclOSM.name}>
+            <TileLayer
+              url={MAP_LAYERS.cyclOSM.url}
+              attribution={MAP_LAYERS.cyclOSM.attribution}
+              maxZoom={MAP_LAYERS.cyclOSM.maxZoom}
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name={MAP_LAYERS.norgeskart.name}>
             <TileLayer
               url={MAP_LAYERS.norgeskart.url}
               attribution={MAP_LAYERS.norgeskart.attribution}
-              maxZoom={18}
+              maxZoom={MAP_LAYERS.norgeskart.maxZoom}
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name={MAP_LAYERS.turkart.name}>
+          <LayersControl.BaseLayer name={MAP_LAYERS.osm.name}>
             <TileLayer
-              url={MAP_LAYERS.turkart.url}
-              attribution={MAP_LAYERS.turkart.attribution}
-              maxZoom={18}
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.norgeskartGray.name}>
-            <TileLayer
-              url={MAP_LAYERS.norgeskartGray.url}
-              attribution={MAP_LAYERS.norgeskartGray.attribution}
-              maxZoom={18}
+              url={MAP_LAYERS.osm.url}
+              attribution={MAP_LAYERS.osm.attribution}
+              maxZoom={MAP_LAYERS.osm.maxZoom}
             />
           </LayersControl.BaseLayer>
 
@@ -177,15 +190,7 @@ export default function HuntMap({
             <TileLayer
               url={MAP_LAYERS.satellite.url}
               attribution={MAP_LAYERS.satellite.attribution}
-              maxZoom={19}
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.openTopo.name}>
-            <TileLayer
-              url={MAP_LAYERS.openTopo.url}
-              attribution={MAP_LAYERS.openTopo.attribution}
-              maxZoom={17}
+              maxZoom={MAP_LAYERS.satellite.maxZoom}
             />
           </LayersControl.BaseLayer>
         </LayersControl>

@@ -13,6 +13,11 @@ import {
   TrendingUp,
   Edit3,
   Send,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  Route,
+  Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -97,6 +102,37 @@ const stats = {
 const mockDogs = [{ id: 'rolex', name: 'Rolex', breed: 'Dachs' }];
 const recentLocations = ['Semsvannet', 'Nordmarka', 'Romeriksåsen'];
 
+// Mock GPS tracks from Garmin
+interface GarminTrack {
+  id: string;
+  dogId: string;
+  dogName: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  distance_km: number;
+  duration_minutes: number;
+  coordinates: [number, number][];
+}
+
+const mockGarminTracks: GarminTrack[] = [
+  {
+    id: 'track-today',
+    dogId: 'rolex',
+    dogName: 'Rolex',
+    date: new Date().toISOString().split('T')[0],
+    startTime: '07:30',
+    endTime: '11:15',
+    distance_km: 8.3,
+    duration_minutes: 225,
+    coordinates: [
+      [59.891, 10.451],
+      [59.892, 10.453],
+      [59.893, 10.452],
+    ],
+  },
+];
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [hunts, setHunts] = useState<Hunt[]>(mockHunts);
@@ -115,6 +151,12 @@ export default function Dashboard() {
   });
   const [customLocation, setCustomLocation] = useState('');
 
+  // GPS-synk og spormatching
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [matchedTrack, setMatchedTrack] = useState<GarminTrack | null>(null);
+  const [showTrackConfirm, setShowTrackConfirm] = useState(false);
+  const [availableTracks, setAvailableTracks] = useState<GarminTrack[]>([]);
+
   // Oppdater localStorage når valg endres
   useEffect(() => {
     if (selectedDog) localStorage.setItem('lastDog', selectedDog);
@@ -123,6 +165,39 @@ export default function Dashboard() {
 
   const currentDogName = mockDogs.find((d) => d.id === selectedDog)?.name || 'Velg hund';
   const currentLocation = selectedLocation || customLocation || 'Velg sted';
+  const todayDate = new Date().toISOString().split('T')[0];
+
+  // Synkroniser med Garmin og finn matchende spor
+  const handleGarminSync = async () => {
+    setIsSyncing(true);
+    try {
+      // Simuler Garmin API-kall
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Sett tilgjengelige spor
+      setAvailableTracks(mockGarminTracks);
+
+      // Auto-match basert på dato og hund
+      const matched = mockGarminTracks.find(
+        (track) => track.date === todayDate && track.dogId === selectedDog
+      );
+
+      if (matched) {
+        setMatchedTrack(matched);
+        setShowTrackConfirm(true);
+        toast.success(`GPS-spor funnet for ${matched.dogName} i dag!`);
+      } else {
+        toast.success('Synkronisert med Garmin');
+        if (mockGarminTracks.length > 0) {
+          toast(`${mockGarminTracks.length} spor tilgjengelig`, { icon: '📍' });
+        }
+      }
+    } catch (error) {
+      toast.error('Kunne ikke synkronisere med Garmin');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleQuickSave = async () => {
     if (!quickNote.trim()) return;
@@ -145,9 +220,18 @@ export default function Dashboard() {
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
-      toast.success('Jakttur lagret!');
+
+      // Inkluder GPS-spor hvis matchet
+      if (matchedTrack) {
+        toast.success(`Jakttur lagret med GPS-spor (${matchedTrack.distance_km} km)!`);
+      } else {
+        toast.success('Jakttur lagret!');
+      }
+
       setQuickNote('');
       setCustomLocation('');
+      setMatchedTrack(null);
+      setShowTrackConfirm(false);
     } catch (error) {
       toast.error('Kunne ikke lagre');
     } finally {
@@ -251,6 +335,69 @@ export default function Dashboard() {
               }
             }}
           />
+
+          {/* GPS-spor matching */}
+          {showTrackConfirm && matchedTrack && (
+            <div className="bg-success/10 border border-success/30 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-text-primary mb-1">
+                    GPS-spor funnet!
+                  </h4>
+                  <p className="text-sm text-text-secondary mb-3">
+                    Automatisk matchet spor for {matchedTrack.dogName} fra i dag
+                  </p>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-text-muted block">Distanse</span>
+                      <span className="font-semibold text-text-primary">
+                        {matchedTrack.distance_km} km
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted block">Varighet</span>
+                      <span className="font-semibold text-text-primary">
+                        {Math.round(matchedTrack.duration_minutes / 60)}t {matchedTrack.duration_minutes % 60}m
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted block">Tid</span>
+                      <span className="font-semibold text-text-primary">
+                        {matchedTrack.startTime} - {matchedTrack.endTime}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => setShowTrackConfirm(false)}
+                      className="text-sm text-text-muted hover:text-text-primary"
+                    >
+                      Fjern spor
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!matchedTrack && (
+            <div className="flex items-center gap-3 bg-background-lighter/50 rounded-lg p-3">
+              <Route className="w-5 h-5 text-text-muted" />
+              <span className="text-sm text-text-muted flex-1">
+                Ingen GPS-spor koblet til denne jakten
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={<RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />}
+                onClick={handleGarminSync}
+                disabled={isSyncing || !selectedDog}
+              >
+                {isSyncing ? 'Synkroniserer...' : 'Synk Garmin'}
+              </Button>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-text-muted">
