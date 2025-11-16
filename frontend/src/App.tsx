@@ -9,6 +9,7 @@ const HuntDetail = lazy(() => import('./pages/HuntDetail'));
 const NewHunt = lazy(() => import('./pages/NewHunt'));
 const Dogs = lazy(() => import('./pages/Dogs'));
 const Settings = lazy(() => import('./pages/Settings'));
+const DogStatistics = lazy(() => import('./pages/DogStatistics'));
 const Login = lazy(() => import('./pages/Login'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -40,6 +41,7 @@ function App() {
           <Route path="hunt/new" element={<NewHunt />} />
           <Route path="hunt/:id" element={<HuntDetail />} />
           <Route path="dogs" element={<Dogs />} />
+          <Route path="statistics" element={<DogStatistics />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<NotFound />} />

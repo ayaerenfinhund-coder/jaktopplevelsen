@@ -1,29 +1,32 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Plus,
   Search,
   Filter,
   Calendar,
   MapPin,
   Dog,
   Camera,
-  Heart,
   MoreVertical,
   TrendingUp,
-  Edit3,
   Send,
   RefreshCw,
   CheckCircle,
-  AlertCircle,
   Route,
-  Clock,
+  Thermometer,
+  Wind,
+  Target,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+import { fetchWeatherFromYr } from '../services/weatherService';
 import type { Hunt } from '../types';
 
 // Mock-data for demonstrasjon
@@ -31,12 +34,12 @@ const mockHunts: Hunt[] = [
   {
     id: '1',
     user_id: 'user1',
-    title: 'Morgenjakt ved Semsvannet',
+    title: 'Morgenjakt ved Storeberg',
     date: '2024-11-10',
     start_time: '07:00',
     end_time: '11:30',
     location: {
-      name: 'Semsvannet',
+      name: 'Storeberg',
       region: 'Asker',
       country: 'Norge',
       coordinates: [59.89, 10.45],
@@ -51,35 +54,35 @@ const mockHunts: Hunt[] = [
     },
     game_type: ['roe_deer', 'hare'],
     game_seen: [
-      { type: 'roe_deer', count: 2, time: '08:45' },
-      { type: 'hare', count: 1, time: '10:00' },
+      { type: 'roe_deer', count: 2 },
+      { type: 'hare', count: 1 },
     ],
     game_harvested: [],
     dogs: ['rolex'],
     tracks: [],
     photos: [],
     notes: 'Rolex jobbet utmerket i terrenget rundt vannet',
-    tags: ['morgenjakt', 'semsvannet'],
-    is_favorite: true,
+    tags: ['morgenjakt', 'storeberg'],
+    is_favorite: false,
     created_at: '2024-11-10T11:30:00Z',
     updated_at: '2024-11-10T11:30:00Z',
   },
   {
     id: '2',
     user_id: 'user1',
-    title: 'Ettermiddagsjakt ved Semsvannet',
+    title: 'Ettermiddagsjakt ved Tveiter',
     date: '2024-11-08',
     start_time: '14:00',
     end_time: '17:30',
     location: {
-      name: 'Semsvannet',
+      name: 'Tveiter',
       region: 'Asker',
       country: 'Norge',
       coordinates: [59.89, 10.45],
     },
     game_type: ['hare'],
-    game_seen: [{ type: 'hare', count: 3, time: '15:30' }],
-    game_harvested: [{ type: 'hare', count: 1, time: '16:00' }],
+    game_seen: [{ type: 'hare', count: 3 }],
+    game_harvested: [{ type: 'hare', count: 1 }],
     dogs: ['rolex'],
     tracks: [],
     photos: [],
@@ -89,18 +92,53 @@ const mockHunts: Hunt[] = [
     created_at: '2024-11-08T17:30:00Z',
     updated_at: '2024-11-08T17:30:00Z',
   },
+  {
+    id: '3',
+    user_id: 'user1',
+    title: 'Hanejakt Storeberg',
+    date: '2023-10-15',
+    start_time: '06:00',
+    end_time: '12:00',
+    location: {
+      name: 'Storeberg',
+      region: 'Asker',
+      country: 'Norge',
+      coordinates: [59.89, 10.45],
+    },
+    game_type: ['roe_deer'],
+    game_seen: [{ type: 'roe_deer', count: 4 }],
+    game_harvested: [{ type: 'roe_deer', count: 1 }],
+    dogs: ['rolex'],
+    tracks: [],
+    photos: [],
+    notes: 'God dag med Rolex',
+    tags: ['morgenjakt'],
+    is_favorite: false,
+    created_at: '2023-10-15T12:00:00Z',
+    updated_at: '2023-10-15T12:00:00Z',
+  },
 ];
-
-const stats = {
-  total_hunts: 24,
-  this_season: 8,
-  total_distance: 156.3,
-  active_dogs: 1,
-};
 
 // Mock data for dogs and locations
 const mockDogs = [{ id: 'rolex', name: 'Rolex', breed: 'Dachs' }];
 const recentLocations = ['Storeberg', 'Tveiter', 'Hanevold'];
+
+// Location coordinates for weather lookup
+const locationCoords: Record<string, [number, number]> = {
+  Storeberg: [59.891, 10.451],
+  Tveiter: [59.885, 10.448],
+  Hanevold: [59.893, 10.455],
+};
+
+// Game types
+const gameTypes = [
+  { id: 'roe_deer', name: 'Rådyr' },
+  { id: 'hare', name: 'Hare' },
+  { id: 'moose', name: 'Elg' },
+  { id: 'deer', name: 'Hjort' },
+  { id: 'grouse', name: 'Rype' },
+  { id: 'fox', name: 'Rev' },
+];
 
 // Mock GPS tracks from Garmin
 interface GarminTrack {
@@ -113,7 +151,7 @@ interface GarminTrack {
   distance_km: number;
   duration_minutes: number;
   coordinates: [number, number][];
-  detectedLocation?: string; // Automatisk stedsnavn fra GPS
+  detectedLocation?: string;
 }
 
 const mockGarminTracks: GarminTrack[] = [
@@ -131,10 +169,30 @@ const mockGarminTracks: GarminTrack[] = [
       [59.892, 10.453],
       [59.893, 10.452],
     ],
-    // Automatisk detektert stedsnavn fra GPS-koordinater
     detectedLocation: 'Storeberg',
   },
 ];
+
+interface WeatherData {
+  temperature: number;
+  wind_speed: number;
+  wind_direction: string;
+  conditions: string;
+}
+
+// Get hunting season for a date (Aug 20 - Apr 15)
+function getHuntingSeason(date: string): string {
+  const d = new Date(date);
+  const month = d.getMonth() + 1;
+  const year = d.getFullYear();
+
+  // If before Aug 20, it belongs to previous season
+  if (month < 8 || (month === 8 && d.getDate() < 20)) {
+    return `${year - 1}/${year}`;
+  }
+  // Aug 20 - Dec 31 belongs to current/next year season
+  return `${year}/${year + 1}`;
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -143,7 +201,13 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Hurtignotat med intelligente standardverdier
+  // Season filtering
+  const [selectedSeason, setSelectedSeason] = useState<string>(() => {
+    // Default to current season
+    return getHuntingSeason(new Date().toISOString().split('T')[0]);
+  });
+
+  // Hurtigregistrering
   const [quickNote, setQuickNote] = useState('');
   const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
   const [selectedDog, setSelectedDog] = useState(() => {
@@ -151,21 +215,62 @@ export default function Dashboard() {
   });
   const [selectedLocation, setSelectedLocation] = useState(() => {
     const saved = localStorage.getItem('lastLocation');
-    // Bruk lagret sted kun hvis det er i listen, ellers bruk Storeberg
     if (saved && recentLocations.includes(saved)) {
       return saved;
     }
-    return recentLocations[0] || ''; // Storeberg som standard
+    return recentLocations[0] || '';
   });
   const [customLocation, setCustomLocation] = useState('');
 
-  // GPS-synk og spormatching
+  // Viltobservasjoner og skutt
+  const [gameSeen, setGameSeen] = useState<Record<string, number>>({});
+  const [gameHarvested, setGameHarvested] = useState<Record<string, number>>({});
+
+  // Vær fra yr.no (automatisk)
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+
+  // GPS-synk
   const [isSyncing, setIsSyncing] = useState(false);
   const [matchedTrack, setMatchedTrack] = useState<GarminTrack | null>(null);
   const [showTrackConfirm, setShowTrackConfirm] = useState(false);
-  const [availableTracks, setAvailableTracks] = useState<GarminTrack[]>([]);
 
-  // Oppdater localStorage når valg endres
+  // Get available seasons from hunts
+  const availableSeasons = Array.from(
+    new Set(hunts.map((h) => getHuntingSeason(h.date)))
+  ).sort().reverse();
+
+  // Hent vær automatisk når sted velges
+  useEffect(() => {
+    const fetchWeather = async () => {
+      const loc = selectedLocation || customLocation;
+      if (!loc || loc === '_custom') return;
+
+      const coords = locationCoords[loc];
+      if (!coords) return;
+
+      setIsLoadingWeather(true);
+      try {
+        const weatherData = await fetchWeatherFromYr(coords[0], coords[1]);
+        if (weatherData) {
+          setWeather({
+            temperature: weatherData.temperature,
+            wind_speed: weatherData.wind_speed,
+            wind_direction: weatherData.wind_direction,
+            conditions: weatherData.conditions,
+          });
+        }
+      } catch (error) {
+        console.error('Kunne ikke hente vær:', error);
+      } finally {
+        setIsLoadingWeather(false);
+      }
+    };
+
+    fetchWeather();
+  }, [selectedLocation, customLocation]);
+
+  // Oppdater localStorage
   useEffect(() => {
     if (selectedDog) localStorage.setItem('lastDog', selectedDog);
     if (selectedLocation && selectedLocation !== '_custom') {
@@ -173,7 +278,7 @@ export default function Dashboard() {
     }
   }, [selectedDog, selectedLocation]);
 
-  // Rens opp ugyldig localStorage ved oppstart
+  // Rens ugyldig localStorage
   useEffect(() => {
     const saved = localStorage.getItem('lastLocation');
     if (saved && !recentLocations.includes(saved)) {
@@ -182,20 +287,14 @@ export default function Dashboard() {
   }, []);
 
   const currentDogName = mockDogs.find((d) => d.id === selectedDog)?.name || 'Velg hund';
-  const currentLocation = selectedLocation || customLocation || 'Velg sted';
   const todayDate = new Date().toISOString().split('T')[0];
 
-  // Synkroniser med Garmin og finn matchende spor
+  // Synkroniser med Garmin
   const handleGarminSync = async () => {
     setIsSyncing(true);
     try {
-      // Simuler Garmin API-kall
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Sett tilgjengelige spor
-      setAvailableTracks(mockGarminTracks);
-
-      // Auto-match basert på dato og hund
       const matched = mockGarminTracks.find(
         (track) => track.date === todayDate && track.dogId === selectedDog
       );
@@ -204,36 +303,29 @@ export default function Dashboard() {
         setMatchedTrack(matched);
         setShowTrackConfirm(true);
 
-        // Automatisk sett stedsnavn fra GPS-spor
         if (matched.detectedLocation) {
           setSelectedLocation(matched.detectedLocation);
-          toast.success(
-            `GPS-spor funnet! Sted satt til ${matched.detectedLocation}`
-          );
+          toast.success(`GPS-spor funnet! Sted: ${matched.detectedLocation}`);
         } else {
-          toast.success(`GPS-spor funnet for ${matched.dogName} i dag!`);
+          toast.success(`GPS-spor funnet for ${matched.dogName}!`);
         }
       } else {
-        toast.success('Synkronisert med Garmin');
-        if (mockGarminTracks.length > 0) {
-          toast(`${mockGarminTracks.length} spor tilgjengelig`, { icon: '📍' });
-        }
+        toast.success('Synkronisert');
       }
     } catch (error) {
-      toast.error('Kunne ikke synkronisere med Garmin');
+      toast.error('Kunne ikke synkronisere');
     } finally {
       setIsSyncing(false);
     }
   };
 
   const handleQuickSave = async () => {
-    if (!quickNote.trim()) return;
     if (!selectedDog) {
-      toast.error('Velg en hund først');
+      toast.error('Velg en hund');
       return;
     }
     if (!selectedLocation && !customLocation) {
-      toast.error('Velg eller skriv inn et sted');
+      toast.error('Velg et sted');
       return;
     }
 
@@ -241,24 +333,30 @@ export default function Dashboard() {
 
     try {
       const location = selectedLocation || customLocation;
-      // Lagre nytt sted i localStorage
       if (customLocation && !recentLocations.includes(customLocation)) {
         localStorage.setItem('lastLocation', customLocation);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Inkluder GPS-spor hvis matchet
+      const totalSeen = Object.values(gameSeen).reduce((a, b) => a + b, 0);
+      const totalHarvested = Object.values(gameHarvested).reduce((a, b) => a + b, 0);
+
       if (matchedTrack) {
-        toast.success(`Jakttur lagret med GPS-spor (${matchedTrack.distance_km} km)!`);
+        toast.success(`Jakttur lagret! GPS: ${matchedTrack.distance_km} km`);
+      } else if (totalSeen > 0 || totalHarvested > 0) {
+        toast.success(`Jakttur lagret! ${totalSeen} sett, ${totalHarvested} felt`);
       } else {
         toast.success('Jakttur lagret!');
       }
 
+      // Reset
       setQuickNote('');
       setCustomLocation('');
       setMatchedTrack(null);
       setShowTrackConfirm(false);
+      setGameSeen({});
+      setGameHarvested({});
     } catch (error) {
       toast.error('Kunne ikke lagre');
     } finally {
@@ -266,63 +364,99 @@ export default function Dashboard() {
     }
   };
 
-  const filteredHunts = hunts.filter(
-    (hunt) =>
+  const updateGameCount = (
+    setter: React.Dispatch<React.SetStateAction<Record<string, number>>>,
+    gameId: string,
+    delta: number
+  ) => {
+    setter((prev) => {
+      const current = prev[gameId] || 0;
+      const newValue = Math.max(0, current + delta);
+      if (newValue === 0) {
+        const { [gameId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [gameId]: newValue };
+    });
+  };
+
+  // Filter hunts by search and season
+  const filteredHunts = hunts.filter((hunt) => {
+    const matchesSearch =
       hunt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hunt.location.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      hunt.location.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSeason = getHuntingSeason(hunt.date) === selectedSeason;
+    return matchesSearch && matchesSeason;
+  });
+
+  const totalSeen = Object.values(gameSeen).reduce((a, b) => a + b, 0);
+  const totalHarvested = Object.values(gameHarvested).reduce((a, b) => a + b, 0);
+
+  // Navigate seasons
+  const navigateSeason = (direction: 'prev' | 'next') => {
+    const currentIndex = availableSeasons.indexOf(selectedSeason);
+    if (direction === 'prev' && currentIndex < availableSeasons.length - 1) {
+      setSelectedSeason(availableSeasons[currentIndex + 1]);
+    } else if (direction === 'next' && currentIndex > 0) {
+      setSelectedSeason(availableSeasons[currentIndex - 1]);
+    }
+  };
+
+  // Calculate season stats
+  const seasonStats = {
+    total_hunts: filteredHunts.length,
+    total_seen: filteredHunts.reduce(
+      (acc, h) => acc + h.game_seen.reduce((a, g) => a + g.count, 0),
+      0
+    ),
+    total_harvested: filteredHunts.reduce(
+      (acc, h) => acc + h.game_harvested.reduce((a, g) => a + g.count, 0),
+      0
+    ),
+  };
 
   return (
-    <div className="space-y-8">
-      {/* HOVEDFORMÅL: Registrer ny jakttur */}
-      <div className="card p-8 bg-gradient-to-br from-primary-700/20 via-primary-700/10 to-transparent border-2 border-primary-700/40">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-text-primary mb-2">
-            Registrer dagens jakt
-          </h1>
-          <p className="text-text-muted">
+    <div className="space-y-6">
+      {/* Registrer jakttur */}
+      <div className="card p-6 bg-gradient-to-br from-primary-700/20 to-transparent border-2 border-primary-700/40">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-text-primary">Registrer jakttur</h1>
+          <p className="text-sm text-text-muted">
             {new Date().toLocaleDateString('nb-NO', {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
-              year: 'numeric',
             })}
           </p>
         </div>
 
-        {/* Velg hund og sted */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {/* Hund og Sted */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label className="input-label flex items-center gap-2">
-              <Dog className="w-4 h-4 text-primary-400" />
-              Hund
-            </label>
+            <label className="text-xs text-text-muted mb-1 block">Hund</label>
             <select
               value={selectedDog}
               onChange={(e) => setSelectedDog(e.target.value)}
-              className="select"
+              className="select text-sm"
             >
-              <option value="">Velg hund</option>
+              <option value="">Velg</option>
               {mockDogs.map((dog) => (
                 <option key={dog.id} value={dog.id}>
-                  {dog.name} ({dog.breed})
+                  {dog.name}
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="input-label flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary-400" />
-              Sted
-            </label>
+            <label className="text-xs text-text-muted mb-1 block">Sted</label>
             {selectedLocation === '_custom' ? (
               <input
                 type="text"
                 value={customLocation}
                 onChange={(e) => setCustomLocation(e.target.value)}
-                placeholder="Skriv inn sted..."
-                className="input"
+                placeholder="Skriv sted..."
+                className="input text-sm"
                 autoFocus
               />
             ) : (
@@ -336,256 +470,311 @@ export default function Dashboard() {
                     setSelectedLocation(e.target.value);
                   }
                 }}
-                className="select"
+                className="select text-sm"
               >
-                <option value="">Velg sted</option>
+                <option value="">Velg</option>
                 {recentLocations.map((loc) => (
                   <option key={loc} value={loc}>
                     {loc}
                   </option>
                 ))}
-                <option value="_custom">+ Nytt sted...</option>
+                <option value="_custom">+ Annet</option>
               </select>
             )}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <textarea
-            value={quickNote}
-            onChange={(e) => setQuickNote(e.target.value)}
-            placeholder={`Skriv om jakten...\n\nHvordan jobbet ${currentDogName !== 'Velg hund' ? currentDogName : 'hunden'} i dag?\nHva observerte dere?\nHvordan var terrenget og forholdene?`}
-            className="input min-h-[200px] w-full font-normal text-base leading-relaxed resize-y"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                handleQuickSave();
-              }
-            }}
-          />
+        {/* Vær (automatisk fra yr.no) */}
+        {weather && (
+          <div className="bg-background/50 rounded-lg p-3 mb-4 flex items-center gap-4 text-sm">
+            <Thermometer className="w-4 h-4 text-accent-400" />
+            <span>{weather.temperature}°C</span>
+            <Wind className="w-4 h-4 text-accent-400" />
+            <span>
+              {weather.wind_speed} m/s {weather.wind_direction}
+            </span>
+            <span className="text-text-muted ml-auto text-xs">yr.no</span>
+          </div>
+        )}
+        {isLoadingWeather && (
+          <div className="text-xs text-text-muted mb-4">Henter vær fra yr.no...</div>
+        )}
 
-          {/* GPS-spor matching */}
-          {showTrackConfirm && matchedTrack && (
-            <div className="bg-success/10 border border-success/30 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-text-primary mb-1">
-                    GPS-spor funnet!
-                  </h4>
-                  <p className="text-sm text-text-secondary mb-3">
-                    Automatisk matchet spor for {matchedTrack.dogName} fra i dag
-                    {matchedTrack.detectedLocation && (
-                      <span className="block mt-1">
-                        <strong>Sted:</strong> {matchedTrack.detectedLocation} (automatisk fra GPS)
-                      </span>
-                    )}
-                  </p>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-text-muted block">Distanse</span>
-                      <span className="font-semibold text-text-primary">
-                        {matchedTrack.distance_km} km
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-text-muted block">Varighet</span>
-                      <span className="font-semibold text-text-primary">
-                        {Math.round(matchedTrack.duration_minutes / 60)}t {matchedTrack.duration_minutes % 60}m
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-text-muted block">Tid</span>
-                      <span className="font-semibold text-text-primary">
-                        {matchedTrack.startTime} - {matchedTrack.endTime}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-3">
+        {/* Observasjoner og Skutt */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="text-xs text-text-muted mb-2 flex items-center gap-1">
+              <Eye className="w-3 h-3" /> Observert
+            </label>
+            <div className="space-y-2">
+              {gameTypes.slice(0, 4).map((game) => (
+                <div key={game.id} className="flex items-center justify-between">
+                  <span className="text-sm text-text-secondary">{game.name}</span>
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setShowTrackConfirm(false)}
-                      className="text-sm text-text-muted hover:text-text-primary"
+                      onClick={() => updateGameCount(setGameSeen, game.id, -1)}
+                      className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:bg-background-light text-xs"
                     >
-                      Fjern spor
+                      -
+                    </button>
+                    <span className="w-6 text-center text-sm font-medium">
+                      {gameSeen[game.id] || 0}
+                    </span>
+                    <button
+                      onClick={() => updateGameCount(setGameSeen, game.id, 1)}
+                      className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:bg-background-light text-xs"
+                    >
+                      +
                     </button>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-          )}
+          </div>
 
-          {!matchedTrack && (
-            <div className="flex items-center gap-3 bg-background-lighter/50 rounded-lg p-3">
-              <Route className="w-5 h-5 text-text-muted" />
-              <span className="text-sm text-text-muted flex-1">
-                Ingen GPS-spor koblet til denne jakten
+          <div>
+            <label className="text-xs text-text-muted mb-2 flex items-center gap-1">
+              <Target className="w-3 h-3" /> Skutt
+            </label>
+            <div className="space-y-2">
+              {gameTypes.slice(0, 4).map((game) => (
+                <div key={game.id} className="flex items-center justify-between">
+                  <span className="text-sm text-text-secondary">{game.name}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
+                      className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:bg-background-light text-xs"
+                    >
+                      -
+                    </button>
+                    <span className="w-6 text-center text-sm font-medium">
+                      {gameHarvested[game.id] || 0}
+                    </span>
+                    <button
+                      onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
+                      className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:bg-background-light text-xs"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Notater */}
+        <textarea
+          value={quickNote}
+          onChange={(e) => setQuickNote(e.target.value)}
+          placeholder={`Notater om jakten...\nHvordan jobbet ${currentDogName !== 'Velg hund' ? currentDogName : 'hunden'}?`}
+          className="input min-h-[100px] w-full text-sm mb-4"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              handleQuickSave();
+            }
+          }}
+        />
+
+        {/* GPS-spor */}
+        {showTrackConfirm && matchedTrack ? (
+          <div className="bg-success/10 border border-success/30 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle className="w-4 h-4 text-success" />
+              <span className="font-medium">{matchedTrack.dogName}</span>
+              <span className="text-text-muted">•</span>
+              <span>{matchedTrack.distance_km} km</span>
+              <span className="text-text-muted">•</span>
+              <span>
+                {Math.round(matchedTrack.duration_minutes / 60)}t{' '}
+                {matchedTrack.duration_minutes % 60}m
               </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                leftIcon={<RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />}
-                onClick={handleGarminSync}
-                disabled={isSyncing || !selectedDog}
+              <button
+                onClick={() => {
+                  setMatchedTrack(null);
+                  setShowTrackConfirm(false);
+                }}
+                className="ml-auto text-xs text-text-muted hover:text-text-primary"
               >
-                {isSyncing ? 'Synkroniserer...' : 'Synk Garmin'}
-              </Button>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-text-muted">
-              ⌘+Enter for å lagre • Notater kan alltid redigeres senere
-            </p>
-            <div className="flex gap-3">
-              <Button variant="outline" size="lg" onClick={() => navigate('/hunt/new')}>
-                Legg til detaljer
-              </Button>
-              <Button
-                variant="primary"
-                size="lg"
-                leftIcon={<Send className="w-5 h-5" />}
-                onClick={handleQuickSave}
-                isLoading={isSavingQuickNote}
-                disabled={!quickNote.trim() || !selectedDog || (!selectedLocation && !customLocation)}
-              >
-                Lagre jakttur
-              </Button>
+                Fjern
+              </button>
             </div>
           </div>
+        ) : (
+          <div className="flex items-center gap-2 mb-4">
+            <Route className="w-4 h-4 text-text-muted" />
+            <span className="text-xs text-text-muted flex-1">Ingen GPS-spor</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+              }
+              onClick={handleGarminSync}
+              disabled={isSyncing || !selectedDog}
+            >
+              {isSyncing ? 'Synk...' : 'Garmin'}
+            </Button>
+          </div>
+        )}
+
+        {/* Lagre */}
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-text-muted">
+            {totalSeen > 0 && `${totalSeen} sett`}
+            {totalSeen > 0 && totalHarvested > 0 && ' • '}
+            {totalHarvested > 0 && `${totalHarvested} felt`}
+          </span>
+          <Button
+            variant="primary"
+            leftIcon={<Send className="w-4 h-4" />}
+            onClick={handleQuickSave}
+            isLoading={isSavingQuickNote}
+            disabled={!selectedDog || (!selectedLocation && !customLocation)}
+          >
+            Lagre
+          </Button>
         </div>
       </div>
 
-      {/* Statistikk-kort */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary-700/20 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-primary-400" />
-            </div>
-            <div>
-              <p className="text-sm text-text-muted">Totalt jaktturer</p>
-              <p className="text-2xl font-bold text-text-primary">{stats.total_hunts}</p>
-            </div>
-          </div>
+      {/* Sesong navigering */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigateSeason('prev')}
+          disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1}
+          className="btn-ghost btn-icon-sm disabled:opacity-30"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <div className="text-center">
+          <h2 className="text-lg font-bold text-text-primary">
+            Sesong {selectedSeason}
+          </h2>
+          <p className="text-xs text-text-muted">
+            {seasonStats.total_hunts} turer • {seasonStats.total_seen} sett •{' '}
+            {seasonStats.total_harvested} felt
+          </p>
         </div>
 
-        <div className="card p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-accent-500/20 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-accent-400" />
-            </div>
-            <div>
-              <p className="text-sm text-text-muted">Denne sesongen</p>
-              <p className="text-2xl font-bold text-text-primary">{stats.this_season}</p>
-            </div>
-          </div>
+        <button
+          onClick={() => navigateSeason('next')}
+          disabled={availableSeasons.indexOf(selectedSeason) === 0}
+          className="btn-ghost btn-icon-sm disabled:opacity-30"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Hurtigstatistikk og detaljert statistikk-knapp */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="card p-4 text-center">
+          <TrendingUp className="w-5 h-5 text-primary-400 mx-auto mb-1" />
+          <p className="text-xl font-bold text-text-primary">
+            {seasonStats.total_hunts}
+          </p>
+          <p className="text-xs text-text-muted">Turer</p>
         </div>
 
-        <div className="card p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-secondary-700/20 rounded-lg flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-secondary-400" />
-            </div>
-            <div>
-              <p className="text-sm text-text-muted">Total distanse</p>
-              <p className="text-2xl font-bold text-text-primary">{stats.total_distance} km</p>
-            </div>
-          </div>
+        <div className="card p-4 text-center">
+          <Eye className="w-5 h-5 text-accent-400 mx-auto mb-1" />
+          <p className="text-xl font-bold text-text-primary">{seasonStats.total_seen}</p>
+          <p className="text-xs text-text-muted">Observert</p>
         </div>
 
-        <div className="card p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-success/20 rounded-lg flex items-center justify-center">
-              <Dog className="w-6 h-6 text-success" />
-            </div>
-            <div>
-              <p className="text-sm text-text-muted">Aktive hunder</p>
-              <p className="text-2xl font-bold text-text-primary">{stats.active_dogs}</p>
-            </div>
-          </div>
+        <div className="card p-4 text-center">
+          <Target className="w-5 h-5 text-success mx-auto mb-1" />
+          <p className="text-xl font-bold text-text-primary">
+            {seasonStats.total_harvested}
+          </p>
+          <p className="text-xs text-text-muted">Felt</p>
         </div>
       </div>
 
-      {/* Søk og filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Detaljert statistikk knapp */}
+      <Button
+        variant="outline"
+        className="w-full"
+        leftIcon={<BarChart3 className="w-4 h-4" />}
+        onClick={() => navigate('/statistics')}
+      >
+        Se detaljert statistikk for hund
+      </Button>
+
+      {/* Søk */}
+      <div className="flex gap-3">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
-            placeholder="Søk etter jaktturer..."
+            placeholder="Søk..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10"
+            className="input pl-9 text-sm"
           />
         </div>
         <Button
           variant="ghost"
-          leftIcon={<Filter className="w-5 h-5" />}
+          size="sm"
+          leftIcon={<Filter className="w-4 h-4" />}
           onClick={() => setShowFilters(!showFilters)}
         >
-          Filtrer
+          Filter
         </Button>
       </div>
 
-      {/* Filterpanel */}
+      {/* Filter */}
       {showFilters && (
-        <div className="card p-6 animate-slide-down">
-          <h3 className="font-semibold text-text-primary mb-4">Filtrer jaktturer</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4 animate-slide-down">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
-              <label className="input-label">Fra dato</label>
-              <input type="date" className="input" />
-            </div>
-            <div>
-              <label className="input-label">Til dato</label>
-              <input type="date" className="input" />
-            </div>
-            <div>
-              <label className="input-label">Vilttype</label>
-              <select className="select">
+              <label className="text-xs text-text-muted mb-1 block">Vilt</label>
+              <select className="select text-sm">
                 <option value="">Alle</option>
-                <option value="moose">Elg</option>
-                <option value="deer">Hjort</option>
-                <option value="roe_deer">Rådyr</option>
-                <option value="grouse">Rype</option>
+                {gameTypes.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="input-label">Kun favoritter</label>
-              <div className="flex items-center h-10">
-                <input type="checkbox" className="checkbox" />
-              </div>
+              <label className="text-xs text-text-muted mb-1 block">Sted</label>
+              <select className="select text-sm">
+                <option value="">Alle</option>
+                {recentLocations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">Hund</label>
+              <select className="select text-sm">
+                <option value="">Alle</option>
+                {mockDogs.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
       )}
 
       {/* Jakttur-liste */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-text-primary">Siste jaktturer</h2>
-
+      <div className="space-y-3">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <LoadingSpinner size="lg" />
-          </div>
+          <LoadingSpinner size="lg" />
         ) : filteredHunts.length === 0 ? (
-          <div className="card p-12 text-center">
-            <MapPin className="w-12 h-12 mx-auto text-text-muted mb-4" />
-            <h3 className="text-lg font-semibold text-text-primary mb-2">
-              Ingen jaktturer funnet
-            </h3>
-            <p className="text-text-muted mb-6">
-              {searchQuery
-                ? 'Prøv et annet søkeord'
-                : 'Kom i gang ved å registrere din første jakttur'}
-            </p>
-            <Link to="/hunt/new">
-              <Button variant="primary" leftIcon={<Plus className="w-5 h-5" />}>
-                Ny jakttur
-              </Button>
-            </Link>
+          <div className="card p-8 text-center">
+            <MapPin className="w-10 h-10 mx-auto text-text-muted mb-3" />
+            <p className="text-text-muted">Ingen jaktturer i denne sesongen</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="space-y-3">
             {filteredHunts.map((hunt) => (
               <HuntCard key={hunt.id} hunt={hunt} />
             ))}
@@ -601,87 +790,62 @@ function HuntCard({ hunt }: { hunt: Hunt }) {
     moose: 'Elg',
     deer: 'Hjort',
     roe_deer: 'Rådyr',
-    wild_boar: 'Villsvin',
-    fox: 'Rev',
     hare: 'Hare',
     grouse: 'Rype',
-    ptarmigan: 'Fjellrype',
-    capercaillie: 'Tiur',
-    black_grouse: 'Orrfugl',
-    duck: 'And',
-    goose: 'Gås',
+    fox: 'Rev',
   };
+
+  const totalSeen = hunt.game_seen.reduce((acc, g) => acc + g.count, 0);
+  const totalHarvested = hunt.game_harvested.reduce((acc, g) => acc + g.count, 0);
 
   return (
     <Link to={`/hunt/${hunt.id}`} className="block">
-      <div className="card-hover">
-        {/* Bilde/kart-område */}
-        <div className="aspect-hunt-card bg-background-lighter relative overflow-hidden rounded-t-xl">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <MapPin className="w-12 h-12 text-text-muted opacity-30" />
-          </div>
-          {hunt.is_favorite && (
-            <div className="absolute top-3 right-3">
-              <Heart className="w-6 h-6 text-accent-500 fill-accent-500" />
-            </div>
-          )}
-          <div className="absolute bottom-3 left-3">
-            <span className="badge-primary">{hunt.location.name}</span>
-          </div>
+      <div className="card p-4 hover:bg-background-light transition-colors">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-text-primary text-sm">{hunt.title}</h3>
+          <span className="text-xs text-text-muted">
+            {format(new Date(hunt.date), 'd. MMM', { locale: nb })}
+          </span>
         </div>
 
-        {/* Innhold */}
-        <div className="p-4">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-text-primary text-lg line-clamp-1">
-              {hunt.title}
-            </h3>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              className="btn-ghost btn-icon-sm -mr-2"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="flex items-center gap-3 text-xs text-text-muted">
+          <span className="flex items-center gap-1">
+            <MapPin className="w-3 h-3" />
+            {hunt.location.name}
+          </span>
+          <span className="flex items-center gap-1">
+            <Dog className="w-3 h-3" />
+            {hunt.dogs.length}
+          </span>
+          {totalSeen > 0 && (
+            <span className="flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              {totalSeen}
+            </span>
+          )}
+          {totalHarvested > 0 && (
+            <span className="flex items-center gap-1 text-success">
+              <Target className="w-3 h-3" />
+              {totalHarvested}
+            </span>
+          )}
+          {hunt.photos.length > 0 && (
+            <span className="flex items-center gap-1">
+              <Camera className="w-3 h-3" />
+              {hunt.photos.length}
+            </span>
+          )}
+        </div>
 
-          <p className="text-sm text-text-muted mb-3">
-            {format(new Date(hunt.date), 'EEEE d. MMMM yyyy', { locale: nb })}
-          </p>
-
-          {/* Vilttyper */}
-          <div className="flex flex-wrap gap-2 mb-3">
+        {hunt.game_type.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
             {hunt.game_type.slice(0, 3).map((type) => (
-              <span key={type} className="badge-secondary">
+              <span key={type} className="badge-secondary text-xs">
                 {gameTypeLabels[type] || type}
               </span>
             ))}
-            {hunt.game_type.length > 3 && (
-              <span className="badge-secondary">+{hunt.game_type.length - 3}</span>
-            )}
           </div>
-
-          {/* Statistikk */}
-          <div className="flex items-center gap-4 text-sm text-text-muted">
-            <div className="flex items-center gap-1">
-              <Dog className="w-4 h-4" />
-              <span>{hunt.dogs.length}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Camera className="w-4 h-4" />
-              <span>{hunt.photos.length}</span>
-            </div>
-            {hunt.game_seen.length > 0 && (
-              <div className="flex items-center gap-1">
-                <span>
-                  {hunt.game_seen.reduce((acc, g) => acc + g.count, 0)} observert
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </Link>
   );

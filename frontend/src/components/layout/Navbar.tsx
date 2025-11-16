@@ -42,7 +42,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
               <img
                 src="/logo.png"
                 alt="Jaktopplevelsen"
-                className="w-10 h-10 rounded-lg object-contain"
+                className="w-12 h-12 rounded-lg object-contain"
                 onError={(e) => {
                   // Fallback til SVG hvis logo.png ikke finnes
                   const target = e.target as HTMLImageElement;
