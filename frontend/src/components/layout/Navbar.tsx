@@ -96,49 +96,46 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             </button>
           </div>
 
-          {/* Right section */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right section - CLEAN for mobile */}
+          <div className="flex items-center gap-1 sm:gap-3">
+            {/* Desktop only: Search button */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="md:hidden btn-ghost btn-icon"
+              className="hidden md:flex btn-ghost btn-icon"
               aria-label="Søk"
             >
               <Search className="w-5 h-5" />
             </button>
 
+            {/* Desktop only: Sync button */}
             <button
               onClick={handleSync}
-              className={`btn-ghost btn-icon ${isSyncing ? 'animate-spin' : ''}`}
+              className={`hidden sm:flex btn-ghost btn-icon ${isSyncing ? 'animate-spin' : ''}`}
               aria-label="Synkroniser med Garmin"
               title="Synkroniser med Garmin"
             >
               <RefreshCw className="w-5 h-5" />
             </button>
 
+            {/* Desktop only: Ny jakttur button */}
             <button
               onClick={handleNewHunt}
-              className="btn-primary btn-sm hidden sm:inline-flex"
+              className="btn-primary btn-sm hidden lg:inline-flex"
             >
               <Plus className="w-4 h-4 mr-2" />
               Ny jakttur
             </button>
 
+            {/* Desktop only: Notifications */}
             <button
-              onClick={handleNewHunt}
-              className="sm:hidden btn-primary btn-icon"
-              aria-label="Ny jakttur"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-
-            <button
-              className="btn-ghost btn-icon relative"
+              className="hidden sm:flex btn-ghost btn-icon relative"
               aria-label="Varsler"
             >
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-accent-500 rounded-full" />
             </button>
 
+            {/* Always visible: Profile/Settings */}
             <Link
               to="/settings"
               className="btn-ghost btn-icon"

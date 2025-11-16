@@ -9,6 +9,11 @@ import {
   Wind,
   Eye,
   Target,
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  Sun,
+  CloudFog,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -241,7 +246,7 @@ export default function PublicHuntView() {
               <div className="card p-4 text-center">
                 <Clock className="w-5 h-5 text-text-muted mx-auto mb-1" />
                 <p className="text-xl font-bold text-text-primary">
-                  {Math.floor(tracks[0].statistics.duration_minutes / 60)}t {tracks[0].statistics.duration_minutes % 60}m
+                  {Math.floor(tracks[0].statistics.duration_minutes / 60)}t {Math.round(tracks[0].statistics.duration_minutes % 60)}m
                 </p>
                 <p className="text-xs text-text-muted">Varighet</p>
               </div>
@@ -252,16 +257,57 @@ export default function PublicHuntView() {
         {/* Vær */}
         {hunt.weather && (
           <div className="card p-4">
-            <h3 className="text-sm font-medium text-text-muted mb-3">Værforhold</h3>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <span className="flex items-center gap-2">
-                <Thermometer className="w-4 h-4 text-accent-400" />
-                {hunt.weather.temperature}°C
-              </span>
-              <span className="flex items-center gap-2">
-                <Wind className="w-4 h-4 text-accent-400" />
-                {hunt.weather.wind_speed} m/s {hunt.weather.wind_direction}
-              </span>
+            <div className="flex items-center gap-3 mb-3">
+              {(() => {
+                switch (hunt.weather.conditions) {
+                  case 'clear':
+                    return <Sun className="w-6 h-6 text-yellow-400" />;
+                  case 'rain':
+                  case 'light_rain':
+                  case 'heavy_rain':
+                    return <CloudRain className="w-6 h-6 text-blue-400" />;
+                  case 'snow':
+                  case 'light_snow':
+                  case 'heavy_snow':
+                    return <CloudSnow className="w-6 h-6 text-blue-200" />;
+                  case 'fog':
+                    return <CloudFog className="w-6 h-6 text-gray-400" />;
+                  default:
+                    return <Cloud className="w-6 h-6 text-gray-400" />;
+                }
+              })()}
+              <div>
+                <h3 className="text-base font-semibold text-text-primary">
+                  {(() => {
+                    const labels: Record<string, string> = {
+                      clear: 'Klart vær',
+                      cloudy: 'Lettskyet',
+                      overcast: 'Overskyet',
+                      rain: 'Regn',
+                      snow: 'Snø',
+                      fog: 'Tåke',
+                    };
+                    return labels[hunt.weather.conditions] || hunt.weather.conditions;
+                  })()}
+                </h3>
+                <p className="text-sm text-text-muted">Værforhold under jakten</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Thermometer className="w-5 h-5 text-accent-400" />
+                <div>
+                  <p className="text-xs text-text-muted">Temperatur</p>
+                  <p className="text-base font-medium text-text-primary">{hunt.weather.temperature}°C</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Wind className="w-5 h-5 text-accent-400" />
+                <div>
+                  <p className="text-xs text-text-muted">Vind</p>
+                  <p className="text-base font-medium text-text-primary">{hunt.weather.wind_speed} m/s {hunt.weather.wind_direction}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}

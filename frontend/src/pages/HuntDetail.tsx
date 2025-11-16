@@ -12,8 +12,13 @@ import {
   Trash2,
   Wind,
   Thermometer,
-  ChevronDown,
   Eye,
+  Target,
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  Sun,
+  CloudFog,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -128,8 +133,6 @@ export default function HuntDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesText, setNotesText] = useState(mockHunt.notes);
-  const [showObservations, setShowObservations] = useState(false);
-  const [showWeather, setShowWeather] = useState(false);
 
   const gameTypeLabels: Record<string, string> = {
     moose: 'Elg',
@@ -140,12 +143,37 @@ export default function HuntDetail() {
   };
 
   const weatherLabels: Record<string, string> = {
-    clear: 'Klart',
+    clear: 'Klart vær',
     cloudy: 'Lettskyet',
     overcast: 'Overskyet',
     rain: 'Regn',
     snow: 'Snø',
     fog: 'Tåke',
+    light_rain: 'Lett regn',
+    heavy_rain: 'Kraftig regn',
+    light_snow: 'Lett snø',
+    heavy_snow: 'Kraftig snøfall',
+    sleet: 'Sludd',
+    partly_cloudy: 'Delvis skyet',
+  };
+
+  const getWeatherIcon = (condition: string) => {
+    switch (condition) {
+      case 'clear':
+        return <Sun className="w-6 h-6 text-yellow-400" />;
+      case 'rain':
+      case 'light_rain':
+      case 'heavy_rain':
+        return <CloudRain className="w-6 h-6 text-blue-400" />;
+      case 'snow':
+      case 'light_snow':
+      case 'heavy_snow':
+        return <CloudSnow className="w-6 h-6 text-blue-200" />;
+      case 'fog':
+        return <CloudFog className="w-6 h-6 text-gray-400" />;
+      default:
+        return <Cloud className="w-6 h-6 text-gray-400" />;
+    }
   };
 
   if (isLoading) {
@@ -173,163 +201,65 @@ export default function HuntDetail() {
   const totalHarvested = hunt.game_harvested.reduce((sum, g) => sum + g.count, 0);
 
   return (
-    <div className="space-y-4 max-w-5xl mx-auto">
-      {/* Kompakt header */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="btn-ghost btn-icon"
-          aria-label="Tilbake"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-text-primary truncate">{hunt.title}</h1>
-          <div className="flex items-center gap-3 text-sm text-text-muted">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {format(new Date(hunt.date), 'd. MMM yyyy', { locale: nb })}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              {hunt.start_time} - {hunt.end_time}
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" />
-              {hunt.location.name}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
+    <div className="space-y-5 max-w-5xl mx-auto pb-8">
+      {/* Header - mobilvennlig */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-4">
           <button
-            className="btn-ghost btn-icon-sm"
+            onClick={() => navigate(-1)}
+            className="p-3 -ml-3 hover:bg-background-lighter rounded-lg transition-colors"
+            aria-label="Tilbake"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-2xl font-bold text-text-primary flex-1">{hunt.title}</h1>
+        </div>
+
+        {/* Metadata - vertikal layout for mobil */}
+        <div className="flex flex-col gap-2 text-base text-text-muted pl-1">
+          <span className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            {format(new Date(hunt.date), 'd. MMMM yyyy', { locale: nb })}
+          </span>
+          <span className="flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            {hunt.start_time} - {hunt.end_time}
+          </span>
+          <span className="flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
+            {hunt.location.name}, {hunt.location.region}
+          </span>
+        </div>
+
+        {/* Handlingsknapper - større touch targets */}
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            className="flex items-center gap-2 px-4 py-2.5 bg-background-light hover:bg-background-lighter rounded-lg transition-colors"
             onClick={() => {
               const shareUrl = `${window.location.origin}/share/${hunt.id}`;
               navigator.clipboard.writeText(shareUrl);
               toast.success('Delingslenke kopiert!');
             }}
           >
-            <Share2 className="w-4 h-4" />
+            <Share2 className="w-5 h-5" />
+            <span className="text-sm font-medium">Del</span>
           </button>
-          <button className="btn-ghost btn-icon-sm">
-            <Edit3 className="w-4 h-4" />
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-background-light hover:bg-background-lighter rounded-lg transition-colors">
+            <Edit3 className="w-5 h-5" />
+            <span className="text-sm font-medium">Rediger</span>
           </button>
           <button
-            className="btn-ghost btn-icon-sm text-red-500"
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors ml-auto"
             onClick={() => setShowDeleteModal(true)}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-5 h-5" />
+            <span className="text-sm font-medium">Slett</span>
           </button>
         </div>
       </div>
 
-      {/* Hovedinfo - kompakt linje */}
-      <div className="bg-background-light rounded-lg p-3 flex flex-wrap items-center gap-4 text-sm">
-        {/* Hunder */}
-        <div className="flex items-center gap-2">
-          <Dog className="w-4 h-4 text-primary-400" />
-          {mockDogs.map((dog) => (
-            <span key={dog.id} className="flex items-center gap-1">
-              <span
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: dog.color }}
-              />
-              <span className="text-text-primary font-medium">{dog.name}</span>
-            </span>
-          ))}
-        </div>
-
-        {/* Vær - kollapsbar */}
-        {hunt.weather && (
-          <button
-            onClick={() => setShowWeather(!showWeather)}
-            className="flex items-center gap-2 hover:text-primary-400 transition-colors"
-          >
-            <Thermometer className="w-4 h-4 text-accent-400" />
-            <span className="text-text-secondary">{hunt.weather.temperature}°C</span>
-            <Wind className="w-4 h-4 text-accent-400" />
-            <span className="text-text-secondary">{hunt.weather.wind_speed} m/s</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${showWeather ? 'rotate-180' : ''}`} />
-          </button>
-        )}
-
-        {/* Observasjoner - kompakt */}
-        <button
-          onClick={() => setShowObservations(!showObservations)}
-          className="flex items-center gap-2 hover:text-primary-400 transition-colors ml-auto"
-        >
-          <Eye className="w-4 h-4 text-primary-400" />
-          <span className="text-text-secondary">
-            {totalGameSeen} sett • {totalHarvested} felt
-          </span>
-          <ChevronDown className={`w-3 h-3 transition-transform ${showObservations ? 'rotate-180' : ''}`} />
-        </button>
-      </div>
-
-      {/* Utvidet vær-info */}
-      {showWeather && hunt.weather && (
-        <div className="bg-background rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm animate-fade-in">
-          <div>
-            <span className="text-text-muted text-xs">Temperatur</span>
-            <p className="text-text-primary">{hunt.weather.temperature}°C</p>
-          </div>
-          <div>
-            <span className="text-text-muted text-xs">Vind</span>
-            <p className="text-text-primary">{hunt.weather.wind_speed} m/s {hunt.weather.wind_direction}</p>
-          </div>
-          <div>
-            <span className="text-text-muted text-xs">Forhold</span>
-            <p className="text-text-primary">{weatherLabels[hunt.weather.conditions]}</p>
-          </div>
-          <div>
-            <span className="text-text-muted text-xs">Luftfuktighet</span>
-            <p className="text-text-primary">{hunt.weather.humidity}%</p>
-          </div>
-        </div>
-      )}
-
-      {/* Utvidet observasjoner */}
-      {showObservations && (
-        <div className="bg-background rounded-lg p-3 grid grid-cols-2 gap-4 text-sm animate-fade-in">
-          <div>
-            <h4 className="text-text-muted text-xs mb-2">Vilt observert</h4>
-            {hunt.game_seen.length > 0 ? (
-              <ul className="space-y-1">
-                {hunt.game_seen.map((obs, i) => (
-                  <li key={i} className="flex justify-between">
-                    <span className="text-text-secondary">
-                      {obs.count}x {gameTypeLabels[obs.type] || obs.type}
-                    </span>
-                    <span className="text-text-muted">{obs.time}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-text-muted">Ingen</p>
-            )}
-          </div>
-          <div>
-            <h4 className="text-text-muted text-xs mb-2">Felt vilt</h4>
-            {hunt.game_harvested.length > 0 ? (
-              <ul className="space-y-1">
-                {hunt.game_harvested.map((game, i) => (
-                  <li key={i} className="flex justify-between">
-                    <span className="text-text-secondary">
-                      {game.count}x {gameTypeLabels[game.type] || game.type}
-                    </span>
-                    <span className="text-text-muted">{game.time}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-text-muted">Ingen</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Kart */}
-      <div className="bg-background-lighter rounded-xl overflow-hidden">
+      {/* 1. Kart - FØRST */}
+      <div className="bg-background-light rounded-xl overflow-hidden">
         <HuntMap
           tracks={tracks}
           center={hunt.location.coordinates}
@@ -337,46 +267,14 @@ export default function HuntDetail() {
         />
       </div>
 
-      {/* Sporstatistikk - kompakt */}
-      {tracks.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {tracks.map((track) => (
-            <div
-              key={track.id}
-              className="bg-background-light rounded-lg p-3 text-center"
-            >
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: track.color }}
-                />
-                <span className="font-medium text-sm text-text-primary">
-                  {track.name.split(' - ')[0]}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="text-text-muted">Dist.</p>
-                  <p className="text-text-primary font-semibold">{track.statistics.distance_km} km</p>
-                </div>
-                <div>
-                  <p className="text-text-muted">Tid</p>
-                  <p className="text-text-primary font-semibold">{Math.round(track.statistics.duration_minutes)} min</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Notater - alltid synlig */}
-      <div className="bg-background-light rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-text-primary">Notater</h3>
+      {/* 2. Notater */}
+      <div className="bg-background-light rounded-xl p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-text-primary">Notater</h3>
           {!editingNotes ? (
             <button
               onClick={() => setEditingNotes(true)}
-              className="text-sm text-primary-400 hover:text-primary-300"
+              className="px-3 py-1.5 text-sm text-primary-400 hover:bg-primary-400/10 rounded-lg transition-colors"
             >
               Rediger
             </button>
@@ -387,7 +285,7 @@ export default function HuntDetail() {
                   setEditingNotes(false);
                   setNotesText(hunt.notes);
                 }}
-                className="text-sm text-text-muted hover:text-text-primary"
+                className="px-3 py-1.5 text-sm text-text-muted hover:bg-background-lighter rounded-lg transition-colors"
               >
                 Avbryt
               </button>
@@ -396,7 +294,7 @@ export default function HuntDetail() {
                   setHunt({ ...hunt, notes: notesText });
                   setEditingNotes(false);
                 }}
-                className="text-sm text-primary-400 hover:text-primary-300 font-medium"
+                className="px-3 py-1.5 text-sm text-primary-400 hover:bg-primary-400/10 rounded-lg font-medium transition-colors"
               >
                 Lagre
               </button>
@@ -407,42 +305,193 @@ export default function HuntDetail() {
           <textarea
             value={notesText}
             onChange={(e) => setNotesText(e.target.value)}
-            className="input min-h-[120px] w-full text-sm"
+            className="input min-h-[140px] w-full text-base"
             placeholder="Skriv dine notater her..."
             autoFocus
           />
         ) : (
-          <p className="text-text-secondary text-sm leading-relaxed">
+          <p className="text-text-secondary text-base leading-relaxed whitespace-pre-wrap">
             {hunt.notes || <span className="text-text-muted italic">Ingen notater</span>}
           </p>
         )}
       </div>
 
-      {/* Bilder - kompakt */}
-      {(hunt.photos.length > 0 || true) && (
-        <div className="bg-background-light rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-text-primary">
-              Bilder {hunt.photos.length > 0 && `(${hunt.photos.length})`}
-            </h3>
-            <button className="text-sm text-primary-400 hover:text-primary-300 flex items-center gap-1">
-              <Camera className="w-4 h-4" />
-              Legg til
-            </button>
+      {/* 3. Statistikk - observert/felt/distanse/varighet */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-background-light rounded-xl p-4 text-center">
+          <Eye className="w-6 h-6 text-primary-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-text-primary">{totalGameSeen}</p>
+          <p className="text-sm text-text-muted">Observert</p>
+        </div>
+        <div className="bg-background-light rounded-xl p-4 text-center">
+          <Target className="w-6 h-6 text-success mx-auto mb-2" />
+          <p className="text-2xl font-bold text-text-primary">{totalHarvested}</p>
+          <p className="text-sm text-text-muted">Felt</p>
+        </div>
+        {tracks[0] && (
+          <>
+            <div className="bg-background-light rounded-xl p-4 text-center">
+              <Dog className="w-6 h-6 text-accent-400 mx-auto mb-2" />
+              <p className="text-2xl font-bold text-text-primary">{tracks[0].statistics.distance_km} km</p>
+              <p className="text-sm text-text-muted">Distanse</p>
+            </div>
+            <div className="bg-background-light rounded-xl p-4 text-center">
+              <Clock className="w-6 h-6 text-text-muted mx-auto mb-2" />
+              <p className="text-2xl font-bold text-text-primary">
+                {Math.floor(tracks[0].statistics.duration_minutes / 60)}t {tracks[0].statistics.duration_minutes % 60}m
+              </p>
+              <p className="text-sm text-text-muted">Varighet</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* 4. Værforhold */}
+      {hunt.weather && (
+        <div className="bg-background-light rounded-xl p-4">
+          <div className="flex items-center gap-3 mb-4">
+            {getWeatherIcon(hunt.weather.conditions)}
+            <div>
+              <h3 className="text-base font-semibold text-text-primary">
+                {weatherLabels[hunt.weather.conditions] || hunt.weather.conditions}
+              </h3>
+              <p className="text-sm text-text-muted">Værforhold under jakten</p>
+            </div>
           </div>
-          {hunt.photos.length > 0 ? (
-            <PhotoGallery photos={hunt.photos} />
-          ) : (
-            <p className="text-text-muted text-sm">Ingen bilder lagt til</p>
-          )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2">
+              <Thermometer className="w-5 h-5 text-accent-400" />
+              <div>
+                <p className="text-xs text-text-muted">Temperatur</p>
+                <p className="text-base font-medium text-text-primary">{hunt.weather.temperature}°C</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Wind className="w-5 h-5 text-accent-400" />
+              <div>
+                <p className="text-xs text-text-muted">Vind</p>
+                <p className="text-base font-medium text-text-primary">{hunt.weather.wind_speed} m/s {hunt.weather.wind_direction}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Tagger - kompakt */}
+      {/* 5. Hunder */}
+      {tracks.length > 0 && (
+        <div className="bg-background-light rounded-xl p-4">
+          <h3 className="text-sm font-medium text-text-muted mb-3">Hunder</h3>
+          <div className="space-y-3">
+            {tracks.map((track) => {
+              const dogName = track.name.split(' - ')[0];
+              return (
+                <div key={track.id} className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: track.color }}
+                  >
+                    {dogName.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-base font-medium text-text-primary">{dogName}</p>
+                    <p className="text-sm text-text-muted">
+                      {track.statistics.distance_km} km • {Math.floor(track.statistics.duration_minutes / 60)}t {track.statistics.duration_minutes % 60}m
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 6. Vilt - detaljert */}
+      {(hunt.game_seen.length > 0 || hunt.game_harvested.length > 0) && (
+        <div className="bg-background-light rounded-xl p-4">
+          <h3 className="text-sm font-medium text-text-muted mb-3">Vilt</h3>
+          <div className="grid grid-cols-2 gap-6">
+            {hunt.game_seen.length > 0 && (
+              <div>
+                <p className="text-xs text-text-muted mb-2">Observert</p>
+                <div className="space-y-2">
+                  {hunt.game_seen.map((obs, i) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <span className="text-base text-text-secondary">
+                        {gameTypeLabels[obs.type] || obs.type}
+                      </span>
+                      <span className="text-base font-medium text-text-primary">{obs.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {hunt.game_harvested.length > 0 && (
+              <div>
+                <p className="text-xs text-text-muted mb-2">Felt</p>
+                <div className="space-y-2">
+                  {hunt.game_harvested.map((game, i) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <span className="text-base text-text-secondary">
+                        {gameTypeLabels[game.type] || game.type}
+                      </span>
+                      <span className="text-base font-medium text-success">{game.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 7. Bilder */}
+      <div className="bg-background-light rounded-xl p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-text-primary">
+            Bilder {hunt.photos.length > 0 && `(${hunt.photos.length})`}
+          </h3>
+          <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-primary-400 hover:bg-primary-400/10 rounded-lg transition-colors cursor-pointer">
+            <Camera className="w-4 h-4" />
+            Legg til
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files && hunt) {
+                  const newPhotos: string[] = [];
+                  Array.from(files).forEach((file) => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      if (ev.target?.result) {
+                        newPhotos.push(ev.target.result as string);
+                        if (newPhotos.length === files.length) {
+                          setHunt({ ...hunt, photos: [...hunt.photos, ...newPhotos] });
+                          toast.success(`${files.length} bilde(r) lagt til`);
+                        }
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  });
+                }
+              }}
+            />
+          </label>
+        </div>
+        {hunt.photos.length > 0 ? (
+          <PhotoGallery photos={hunt.photos} />
+        ) : (
+          <p className="text-text-muted text-base">Ingen bilder lagt til</p>
+        )}
+      </div>
+
+      {/* Tagger */}
       {hunt.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           {hunt.tags.map((tag) => (
-            <span key={tag} className="text-xs bg-background-lighter px-2 py-1 rounded text-text-muted">
+            <span key={tag} className="text-sm bg-background-lighter px-3 py-1.5 rounded-lg text-text-muted">
               #{tag}
             </span>
           ))}

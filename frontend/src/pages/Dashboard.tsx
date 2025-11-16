@@ -15,10 +15,12 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  Image,
   Download,
+  Calendar,
+  List,
+  Images,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Modal from '../components/common/Modal';
@@ -238,6 +240,11 @@ export default function Dashboard() {
   // Vilt-modal
   const [showGameModal, setShowGameModal] = useState(false);
 
+  // Date picker
+  const [huntDate, setHuntDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+
   // PWA Install
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
@@ -245,7 +252,7 @@ export default function Dashboard() {
   // Ref for å spore om initial sync er gjort og rate limiting
   const hasInitialSynced = useRef(false);
   const lastSyncTime = useRef<number>(0);
-  const MIN_SYNC_INTERVAL = 300000; // 5 minutter mellom syncs
+  const MIN_SYNC_INTERVAL = 1800000; // 30 minutter mellom syncs for å unngå Garmin API block
 
   // Listen for PWA install prompt
   useEffect(() => {
@@ -623,18 +630,31 @@ export default function Dashboard() {
           <div className="text-xs text-text-muted mb-4">Henter vær fra yr.no...</div>
         )}
 
-        {/* Vilt - Premium knapp */}
+        {/* Notater - FØRST */}
+        <textarea
+          value={quickNote}
+          onChange={(e) => setQuickNote(e.target.value)}
+          placeholder={`Notater om jakten...\nHvordan jobbet ${currentDogName !== 'Velg hund' ? currentDogName : 'hunden'}?`}
+          className="input min-h-[80px] w-full text-sm mb-4"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              handleQuickSave();
+            }
+          }}
+        />
+
+        {/* Vilt - nøytralt ikon */}
         <button
           onClick={() => setShowGameModal(true)}
           className="w-full mb-4 p-3 bg-background rounded-lg flex items-center justify-between hover:bg-background-lighter transition-colors"
         >
           <div className="flex items-center gap-3">
-            <Target className="w-5 h-5 text-primary-400" />
+            <List className="w-5 h-5 text-text-muted" />
             <span className="text-sm font-medium text-text-primary">Registrer vilt</span>
           </div>
           <div className="flex items-center gap-2">
             {totalSeen > 0 && (
-              <span className="text-sm text-primary-400 font-medium">{totalSeen} observert</span>
+              <span className="text-sm text-text-primary font-medium">{totalSeen} observert</span>
             )}
             {totalSeen > 0 && totalHarvested > 0 && (
               <span className="text-text-muted">•</span>
@@ -649,20 +669,7 @@ export default function Dashboard() {
           </div>
         </button>
 
-        {/* Notater */}
-        <textarea
-          value={quickNote}
-          onChange={(e) => setQuickNote(e.target.value)}
-          placeholder={`Notater om jakten...\nHvordan jobbet ${currentDogName !== 'Velg hund' ? currentDogName : 'hunden'}?`}
-          className="input min-h-[80px] w-full text-sm mb-4"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-              handleQuickSave();
-            }
-          }}
-        />
-
-        {/* Bilder */}
+        {/* Bilder - nøytralt ikon */}
         <label className="block mb-4 cursor-pointer">
           <input
             type="file"
@@ -690,12 +697,12 @@ export default function Dashboard() {
           />
           <div className="p-3 bg-background rounded-lg flex items-center justify-between hover:bg-background-lighter transition-colors">
             <div className="flex items-center gap-3">
-              <Image className="w-5 h-5 text-primary-400" />
+              <Images className="w-5 h-5 text-text-muted" />
               <span className="text-sm font-medium text-text-primary">Bilder</span>
             </div>
             <div className="flex items-center gap-2">
               {photos.length > 0 ? (
-                <span className="text-sm text-primary-400 font-medium">{photos.length} valgt</span>
+                <span className="text-sm text-text-primary font-medium">{photos.length} valgt</span>
               ) : (
                 <span className="text-sm text-text-muted">Legg til</span>
               )}

@@ -209,22 +209,25 @@ export default function DogStatistics() {
   );
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="btn-ghost btn-icon">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="space-y-6 max-w-5xl mx-auto pb-8">
+      {/* Header - mobilvennlig */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-3 -ml-3 hover:bg-background-lighter rounded-lg transition-colors"
+        >
+          <ArrowLeft className="w-6 h-6" />
         </button>
-        <h1 className="text-xl font-bold text-text-primary">Detaljert Statistikk</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Detaljert Statistikk</h1>
       </div>
 
       {/* Dog selector */}
-      <div className="card p-4">
+      <div className="bg-background-light rounded-xl p-4">
         <label className="text-sm text-text-muted mb-2 block">Velg hund</label>
         <select
           value={selectedDog}
           onChange={(e) => setSelectedDog(e.target.value)}
-          className="select"
+          className="select text-base"
         >
           {mockDogs.map((dog) => (
             <option key={dog.id} value={dog.id}>
@@ -237,8 +240,8 @@ export default function DogStatistics() {
       {dog && (
         <>
           {/* Total lifetime stats */}
-          <div className="card p-6">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="bg-background-light rounded-xl p-4">
+            <div className="flex items-center gap-3 mb-5">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: dog.color }}
@@ -248,81 +251,65 @@ export default function DogStatistics() {
               <div>
                 <h2 className="text-lg font-bold text-text-primary">{dog.name}</h2>
                 <p className="text-sm text-text-muted">
-                  Total historikk fra Garmin Alpha 200
+                  Total historikk fra Garmin Alpha
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              <div className="bg-background rounded-lg p-4">
-                <TrendingUp className="w-5 h-5 text-primary-400 mb-2" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-background rounded-xl p-4 text-center">
+                <TrendingUp className="w-6 h-6 text-primary-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-text-primary">
                   {totalStats.total_hunts}
                 </p>
-                <p className="text-xs text-text-muted">Totalt jaktturer</p>
+                <p className="text-sm text-text-muted">Jaktturer</p>
               </div>
 
-              <div className="bg-background rounded-lg p-4">
-                <Route className="w-5 h-5 text-accent-400 mb-2" />
+              <div className="bg-background rounded-xl p-4 text-center">
+                <Route className="w-6 h-6 text-accent-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-text-primary">
                   {totalStats.total_distance.toFixed(1)} km
                 </p>
-                <p className="text-xs text-text-muted">Total distanse</p>
+                <p className="text-sm text-text-muted">Total distanse</p>
               </div>
 
-              <div className="bg-background rounded-lg p-4">
-                <Clock className="w-5 h-5 text-secondary-400 mb-2" />
+              <div className="bg-background rounded-xl p-4 text-center">
+                <Clock className="w-6 h-6 text-secondary-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-text-primary">
-                  {Math.round(totalStats.total_duration / 60)}t
+                  {Math.floor(totalStats.total_duration / 60)}t
                 </p>
-                <p className="text-xs text-text-muted">Total tid i felt</p>
+                <p className="text-sm text-text-muted">Tid i felt</p>
               </div>
 
-              <div className="bg-background rounded-lg p-4">
-                <Mountain className="w-5 h-5 text-success mb-2" />
+              <div className="bg-background rounded-xl p-4 text-center">
+                <Mountain className="w-6 h-6 text-success mx-auto mb-2" />
                 <p className="text-2xl font-bold text-text-primary">
                   {totalStats.total_elevation.toLocaleString()}m
                 </p>
-                <p className="text-xs text-text-muted">Total høydemeter</p>
+                <p className="text-sm text-text-muted">Høydemeter</p>
               </div>
 
-              <div className="bg-background rounded-lg p-4">
-                <Zap className="w-5 h-5 text-yellow-500 mb-2" />
-                <p className="text-2xl font-bold text-text-primary">
-                  {totalStats.total_calories.toLocaleString()}
-                </p>
-                <p className="text-xs text-text-muted">Kalorier brent</p>
-              </div>
-
-              <div className="bg-background rounded-lg p-4">
-                <Route className="w-5 h-5 text-primary-400 mb-2" />
-                <p className="text-2xl font-bold text-text-primary">
-                  {totalStats.avg_distance.toFixed(1)} km
-                </p>
-                <p className="text-xs text-text-muted">Snitt per tur</p>
-              </div>
-
-              <div className="bg-background rounded-lg p-4">
-                <Target className="w-5 h-5 text-red-500 mb-2" />
+              <div className="bg-background rounded-xl p-4 text-center">
+                <Target className="w-6 h-6 text-red-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-text-primary">
                   {totalStats.max_speed.toFixed(1)} km/t
                 </p>
-                <p className="text-xs text-text-muted">Maks hastighet</p>
+                <p className="text-sm text-text-muted">Maks hastighet</p>
               </div>
 
-              <div className="bg-background rounded-lg p-4">
-                <Mountain className="w-5 h-5 text-purple-500 mb-2" />
+              <div className="bg-background rounded-xl p-4 text-center">
+                <Route className="w-6 h-6 text-primary-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-text-primary">
-                  {totalStats.max_elevation}m
+                  {totalStats.avg_distance.toFixed(1)} km
                 </p>
-                <p className="text-xs text-text-muted">Høyeste punkt</p>
+                <p className="text-sm text-text-muted">Snitt per tur</p>
               </div>
             </div>
           </div>
 
           {/* Location breakdown */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <div className="bg-background-light rounded-xl p-4">
+            <h3 className="text-base font-semibold text-text-primary mb-4 flex items-center gap-2">
               <MapPin className="w-5 h-5" />
               Statistikk per sted
             </h3>
@@ -332,16 +319,16 @@ export default function DogStatistics() {
                 .map(([location, stats]) => (
                   <div
                     key={location}
-                    className="bg-background rounded-lg p-4 flex items-center justify-between"
+                    className="bg-background rounded-xl p-4 flex items-center justify-between"
                   >
                     <div>
-                      <p className="font-medium text-text-primary">{location}</p>
+                      <p className="text-base font-medium text-text-primary">{location}</p>
                       <p className="text-sm text-text-muted">{stats.count} turer</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-text-primary">{stats.distance.toFixed(1)} km</p>
-                      <p className="text-xs text-text-muted">
-                        {Math.round(stats.duration / 60)}t total
+                      <p className="text-base font-medium text-text-primary">{stats.distance.toFixed(1)} km</p>
+                      <p className="text-sm text-text-muted">
+                        {Math.floor(stats.duration / 60)}t {stats.duration % 60}m total
                       </p>
                     </div>
                   </div>
@@ -349,86 +336,63 @@ export default function DogStatistics() {
             </div>
           </div>
 
-          {/* Detailed history table */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          {/* Detailed history - mobilvennlig cards istedenfor tabell */}
+          <div className="bg-background-light rounded-xl p-4">
+            <h3 className="text-base font-semibold text-text-primary mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               Komplett jakthistorikk
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-background-lighter">
-                    <th className="text-left py-3 px-2 text-text-muted font-medium">
-                      Dato
-                    </th>
-                    <th className="text-left py-3 px-2 text-text-muted font-medium">
-                      Sted
-                    </th>
-                    <th className="text-right py-3 px-2 text-text-muted font-medium">
-                      Dist.
-                    </th>
-                    <th className="text-right py-3 px-2 text-text-muted font-medium">
-                      Tid
-                    </th>
-                    <th className="text-right py-3 px-2 text-text-muted font-medium">
-                      Snitt
-                    </th>
-                    <th className="text-right py-3 px-2 text-text-muted font-medium">
-                      Maks
-                    </th>
-                    <th className="text-right py-3 px-2 text-text-muted font-medium">
-                      Høyde↑
-                    </th>
-                    <th className="text-right py-3 px-2 text-text-muted font-medium">
-                      Kcal
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dogData.map((entry) => (
-                    <tr
-                      key={entry.id}
-                      className="border-b border-background-lighter/50 hover:bg-background-light/50"
-                    >
-                      <td className="py-3 px-2 text-text-primary">
-                        {format(new Date(entry.date), 'd. MMM yy', { locale: nb })}
-                      </td>
-                      <td className="py-3 px-2 text-text-secondary">{entry.location}</td>
-                      <td className="py-3 px-2 text-right text-text-primary font-medium">
+            <div className="space-y-3">
+              {dogData.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="bg-background rounded-xl p-4"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="text-base font-semibold text-text-primary">
+                        {entry.location}
+                      </p>
+                      <p className="text-sm text-text-muted">
+                        {format(new Date(entry.date), 'd. MMMM yyyy', { locale: nb })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-bold text-primary-400">
                         {entry.distance_km} km
-                      </td>
-                      <td className="py-3 px-2 text-right text-text-secondary">
-                        {Math.round(entry.duration_minutes / 60)}t{' '}
-                        {entry.duration_minutes % 60}m
-                      </td>
-                      <td className="py-3 px-2 text-right text-text-secondary">
-                        {entry.avg_speed_kmh} km/t
-                      </td>
-                      <td className="py-3 px-2 text-right text-text-secondary">
-                        {entry.max_speed_kmh} km/t
-                      </td>
-                      <td className="py-3 px-2 text-right text-text-secondary">
-                        {entry.elevation_gain_m}m
-                      </td>
-                      <td className="py-3 px-2 text-right text-text-secondary">
-                        {entry.calories_burned}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </p>
+                      <p className="text-sm text-text-muted">
+                        {Math.floor(entry.duration_minutes / 60)}t {entry.duration_minutes % 60}m
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-text-muted">Snitt</p>
+                      <p className="font-medium text-text-primary">{entry.avg_speed_kmh} km/t</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Maks</p>
+                      <p className="font-medium text-text-primary">{entry.max_speed_kmh} km/t</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Høyde↑</p>
+                      <p className="font-medium text-text-primary">{entry.elevation_gain_m}m</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Performance trends */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <div className="bg-background-light rounded-xl p-4">
+            <h3 className="text-base font-semibold text-text-primary mb-4 flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
               Prestasjonstrender
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-background rounded-lg p-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-background rounded-xl p-4">
                 <p className="text-sm text-text-muted mb-2">Lengste tur</p>
                 <p className="text-xl font-bold text-text-primary">
                   {totalStats.max_distance} km
@@ -437,30 +401,20 @@ export default function DogStatistics() {
                   {
                     dogData.find((d) => d.distance_km === totalStats.max_distance)
                       ?.location
-                  }{' '}
-                  -{' '}
-                  {dogData.find((d) => d.distance_km === totalStats.max_distance)?.date &&
-                    format(
-                      new Date(
-                        dogData.find((d) => d.distance_km === totalStats.max_distance)!
-                          .date
-                      ),
-                      'd. MMM yyyy',
-                      { locale: nb }
-                    )}
+                  }
                 </p>
               </div>
 
-              <div className="bg-background rounded-lg p-4">
-                <p className="text-sm text-text-muted mb-2">Gjennomsnittlig varighet</p>
+              <div className="bg-background rounded-xl p-4">
+                <p className="text-sm text-text-muted mb-2">Snitt varighet</p>
                 <p className="text-xl font-bold text-text-primary">
-                  {Math.round(totalStats.avg_duration / 60)}t{' '}
+                  {Math.floor(totalStats.avg_duration / 60)}t{' '}
                   {Math.round(totalStats.avg_duration % 60)}m
                 </p>
                 <p className="text-xs text-text-muted mt-1">Per jakttur</p>
               </div>
 
-              <div className="bg-background rounded-lg p-4">
+              <div className="bg-background rounded-xl p-4">
                 <p className="text-sm text-text-muted mb-2">Snitt høydemeter</p>
                 <p className="text-xl font-bold text-text-primary">
                   {Math.round(totalStats.total_elevation / totalStats.total_hunts)}m
@@ -468,13 +422,13 @@ export default function DogStatistics() {
                 <p className="text-xs text-text-muted mt-1">Per tur</p>
               </div>
 
-              <div className="bg-background rounded-lg p-4">
+              <div className="bg-background rounded-xl p-4">
                 <p className="text-sm text-text-muted mb-2">Snitt maks puls</p>
                 <p className="text-xl font-bold text-text-primary">
                   {Math.round(totalStats.avg_max_hr)} bpm
                 </p>
                 <p className="text-xs text-text-muted mt-1">
-                  {dog.name} sin arbeidskapasitet
+                  {dog.name}
                 </p>
               </div>
             </div>
