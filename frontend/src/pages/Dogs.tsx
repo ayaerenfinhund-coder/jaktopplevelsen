@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Edit3,
@@ -6,6 +7,7 @@ import {
   Dog as DogIcon,
   Calendar,
   MapPin,
+  BarChart3,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -60,6 +62,7 @@ const defaultColors = [
 ];
 
 export default function Dogs() {
+  const navigate = useNavigate();
   const [dogs, setDogs] = useState<Dog[]>(mockDogs);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDog, setEditingDog] = useState<Dog | null>(null);
@@ -208,6 +211,7 @@ export default function Dogs() {
                 }}
                 onDelete={() => setShowDeleteModal(dog)}
                 onToggleActive={() => toggleActive(dog)}
+                onViewStats={() => navigate('/statistics')}
               />
             ))}
           </div>
@@ -231,6 +235,7 @@ export default function Dogs() {
                 }}
                 onDelete={() => setShowDeleteModal(dog)}
                 onToggleActive={() => toggleActive(dog)}
+                onViewStats={() => navigate('/statistics')}
               />
             ))}
           </div>
@@ -377,11 +382,13 @@ function DogCard({
   onEdit,
   onDelete,
   onToggleActive,
+  onViewStats,
 }: {
   dog: Dog;
   onEdit: () => void;
   onDelete: () => void;
   onToggleActive: () => void;
+  onViewStats: () => void;
 }) {
   return (
     <div
@@ -389,7 +396,10 @@ function DogCard({
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+          <button
+            onClick={onViewStats}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
+          >
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
               style={{ backgroundColor: dog.color }}
@@ -402,7 +412,7 @@ function DogCard({
               </h3>
               <p className="text-sm text-text-muted">{dog.breed}</p>
             </div>
-          </div>
+          </button>
           <div className="flex gap-1">
             <button onClick={onEdit} className="btn-ghost btn-icon-sm">
               <Edit3 className="w-4 h-4" />
@@ -460,7 +470,16 @@ function DogCard({
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 space-y-2">
+          <Button
+            variant="primary"
+            size="sm"
+            fullWidth
+            leftIcon={<BarChart3 className="w-4 h-4" />}
+            onClick={onViewStats}
+          >
+            Se detaljert statistikk
+          </Button>
           <Button
             variant={dog.is_active ? 'ghost' : 'outline'}
             size="sm"

@@ -500,29 +500,29 @@ export default function Dashboard() {
           <div className="text-xs text-text-muted mb-4">Henter vær fra yr.no...</div>
         )}
 
-        {/* Observasjoner og Skutt */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        {/* Observasjoner og Skutt - større og mer lesbar */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="text-xs text-text-muted mb-2 flex items-center gap-1">
-              <Eye className="w-3 h-3" /> Observert
+            <label className="text-sm font-medium text-text-primary mb-3 flex items-center gap-2">
+              <Eye className="w-4 h-4 text-primary-400" /> Observert
             </label>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {gameTypes.slice(0, 4).map((game) => (
                 <div key={game.id} className="flex items-center justify-between">
-                  <span className="text-sm text-text-secondary">{game.name}</span>
-                  <div className="flex items-center gap-2">
+                  <span className="text-base text-text-primary">{game.name}</span>
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => updateGameCount(setGameSeen, game.id, -1)}
-                      className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:bg-background-light text-xs"
+                      className="w-8 h-8 rounded-lg bg-background-lighter text-text-primary hover:bg-background-light text-lg font-medium"
                     >
                       -
                     </button>
-                    <span className="w-6 text-center text-sm font-medium">
+                    <span className="w-8 text-center text-lg font-bold text-text-primary">
                       {gameSeen[game.id] || 0}
                     </span>
                     <button
                       onClick={() => updateGameCount(setGameSeen, game.id, 1)}
-                      className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:bg-background-light text-xs"
+                      className="w-8 h-8 rounded-lg bg-background-lighter text-text-primary hover:bg-background-light text-lg font-medium"
                     >
                       +
                     </button>
@@ -533,26 +533,26 @@ export default function Dashboard() {
           </div>
 
           <div>
-            <label className="text-xs text-text-muted mb-2 flex items-center gap-1">
-              <Target className="w-3 h-3" /> Skutt
+            <label className="text-sm font-medium text-text-primary mb-3 flex items-center gap-2">
+              <Target className="w-4 h-4 text-success" /> Skutt
             </label>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {gameTypes.slice(0, 4).map((game) => (
                 <div key={game.id} className="flex items-center justify-between">
-                  <span className="text-sm text-text-secondary">{game.name}</span>
-                  <div className="flex items-center gap-2">
+                  <span className="text-base text-text-primary">{game.name}</span>
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
-                      className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:bg-background-light text-xs"
+                      className="w-8 h-8 rounded-lg bg-background-lighter text-text-primary hover:bg-background-light text-lg font-medium"
                     >
                       -
                     </button>
-                    <span className="w-6 text-center text-sm font-medium">
+                    <span className="w-8 text-center text-lg font-bold text-text-primary">
                       {gameHarvested[game.id] || 0}
                     </span>
                     <button
                       onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
-                      className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:bg-background-light text-xs"
+                      className="w-8 h-8 rounded-lg bg-background-lighter text-text-primary hover:bg-background-light text-lg font-medium"
                     >
                       +
                     </button>
@@ -577,11 +577,11 @@ export default function Dashboard() {
         />
 
         {/* GPS-spor */}
-        {showTrackConfirm && matchedTrack ? (
+        {showTrackConfirm && matchedTrack && (
           <div className="bg-success/10 border border-success/30 rounded-lg p-3 mb-4">
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle className="w-4 h-4 text-success" />
-              <span className="font-medium">{matchedTrack.dogName}</span>
+            <div className="flex items-center justify-center gap-3 text-sm">
+              <CheckCircle className="w-5 h-5 text-success" />
+              <span className="font-semibold">{matchedTrack.dogName}</span>
               <span className="text-text-muted">•</span>
               <span>{matchedTrack.distance_km} km</span>
               <span className="text-text-muted">•</span>
@@ -594,46 +594,50 @@ export default function Dashboard() {
                   setMatchedTrack(null);
                   setShowTrackConfirm(false);
                 }}
-                className="ml-auto text-xs text-text-muted hover:text-text-primary"
+                className="text-xs text-text-muted hover:text-text-primary ml-2"
               >
-                Fjern
+                ✕
               </button>
             </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 mb-4">
-            <Route className="w-4 h-4 text-text-muted" />
-            <span className="text-xs text-text-muted flex-1">Ingen GPS-spor</span>
+        )}
+
+        {/* Sentrerte knapper */}
+        <div className="flex flex-col items-center gap-3">
+          {!matchedTrack && (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="lg"
               leftIcon={
-                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
               }
               onClick={handleGarminSync}
               disabled={isSyncing || !selectedDog}
+              className="w-full max-w-sm"
             >
-              {isSyncing ? 'Synk...' : 'Garmin'}
+              {isSyncing ? 'Synkroniserer...' : 'Synk med Garmin'}
             </Button>
-          </div>
-        )}
+          )}
 
-        {/* Lagre */}
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-text-muted">
-            {totalSeen > 0 && `${totalSeen} sett`}
-            {totalSeen > 0 && totalHarvested > 0 && ' • '}
-            {totalHarvested > 0 && `${totalHarvested} felt`}
-          </span>
           <Button
             variant="primary"
-            leftIcon={<Send className="w-4 h-4" />}
+            size="lg"
+            leftIcon={<Send className="w-5 h-5" />}
             onClick={handleQuickSave}
             isLoading={isSavingQuickNote}
             disabled={!selectedDog || (!selectedLocation && !customLocation)}
+            className="w-full max-w-sm"
           >
-            Lagre
+            Lagre jakttur
           </Button>
+
+          {(totalSeen > 0 || totalHarvested > 0) && (
+            <span className="text-sm text-text-muted">
+              {totalSeen > 0 && `${totalSeen} observert`}
+              {totalSeen > 0 && totalHarvested > 0 && ' • '}
+              {totalHarvested > 0 && `${totalHarvested} felt`}
+            </span>
+          )}
         </div>
       </div>
 
