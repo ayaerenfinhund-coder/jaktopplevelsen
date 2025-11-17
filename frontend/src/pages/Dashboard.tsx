@@ -551,7 +551,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${showInstallButton ? 'pb-16' : ''}`}>
       {/* Registrer jakttur - HOVEDFOKUS */}
       <div className="p-5 bg-background-light rounded-xl">
         <div className="flex items-center justify-between mb-4">
