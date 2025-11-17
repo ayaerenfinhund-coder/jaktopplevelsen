@@ -556,13 +556,42 @@ export default function Dashboard() {
       <div className="p-5 bg-background-light rounded-xl">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-text-primary">Registrer jakttur</h1>
-          <span className="text-xs text-text-muted">
-            {new Date().toLocaleDateString('nb-NO', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-            })}
-          </span>
+          <div className="relative">
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="text-xs text-text-muted hover:text-primary-400 transition-colors flex items-center gap-1"
+            >
+              <Calendar className="w-3 h-3" />
+              {huntDate.toLocaleDateString('nb-NO', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              })}
+            </button>
+            {showDatePicker && (
+              <div className="absolute right-0 top-full mt-1 bg-background-light border border-background-lighter rounded-lg shadow-xl p-3 z-50">
+                <input
+                  type="date"
+                  value={huntDate.toISOString().split('T')[0]}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    setHuntDate(new Date(e.target.value));
+                    setShowDatePicker(false);
+                  }}
+                  className="input text-sm"
+                />
+                <button
+                  onClick={() => {
+                    setHuntDate(new Date());
+                    setShowDatePicker(false);
+                  }}
+                  className="w-full mt-2 text-xs text-primary-400 hover:text-primary-300"
+                >
+                  I dag
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Hund og Sted */}
@@ -984,7 +1013,18 @@ export default function Dashboard() {
             );
           })}
         </div>
-        <div className="mt-6 flex justify-between items-center">
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => {
+              setGameSeen({});
+              setGameHarvested({});
+            }}
+            className="text-xs text-text-muted hover:text-error transition-colors"
+          >
+            Nullstill alle
+          </button>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
           <div className="text-sm text-text-muted">
             {totalSeen > 0 && <span className="text-primary-400 font-medium">{totalSeen} observert</span>}
             {totalSeen > 0 && totalHarvested > 0 && <span className="mx-2">•</span>}

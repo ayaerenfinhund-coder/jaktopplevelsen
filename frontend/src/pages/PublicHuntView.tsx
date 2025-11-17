@@ -102,6 +102,7 @@ export default function PublicHuntView() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     const loadSharedHunt = async () => {
@@ -112,6 +113,24 @@ export default function PublicHuntView() {
 
         // I produksjon ville dette hente data basert på shareId
         if (shareId) {
+          // Sjekk om lenken er utløpt (60 minutter etter deling)
+          // I demo: bruk shareId for å simulere utløpstid
+          // Faktisk implementasjon: sjekk mot database timestamp
+          const mockShareTime = localStorage.getItem(`share_time_${shareId}`);
+          if (mockShareTime) {
+            const shareTimestamp = parseInt(mockShareTime, 10);
+            const now = Date.now();
+            const expirationTime = 60 * 60 * 1000; // 60 minutter
+            if (now - shareTimestamp > expirationTime) {
+              setIsExpired(true);
+              setIsLoading(false);
+              return;
+            }
+          } else {
+            // Første gang lenken åpnes - sett starttid
+            localStorage.setItem(`share_time_${shareId}`, Date.now().toString());
+          }
+
           setHunt(mockSharedHunt);
           setTracks(mockTracks);
         } else {
@@ -140,6 +159,31 @@ export default function PublicHuntView() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (isExpired) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <img
+            src="/logo.png"
+            alt="Jaktopplevelsen"
+            className="w-24 h-24 rounded-xl object-contain mx-auto mb-6"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
+          />
+          <h1 className="text-2xl font-bold text-text-primary mb-3">
+            Denne lenken har utløpt
+          </h1>
+          <p className="text-text-muted text-sm">
+            Delingslenker utløper etter 60 minutter av sikkerhetsgrunner.
+            Be eieren om å dele en ny lenke.
+          </p>
+        </div>
       </div>
     );
   }
@@ -219,6 +263,14 @@ export default function PublicHuntView() {
               zoom={14}
               initialHeight="medium"
             />
+          </div>
+        )}
+
+        {/* Notater - RETT ETTER KART */}
+        {hunt.notes && (
+          <div className="card p-4">
+            <h3 className="text-sm font-medium text-text-muted mb-3">Notater</h3>
+            <p className="text-text-secondary text-sm whitespace-pre-wrap">{hunt.notes}</p>
           </div>
         )}
 
@@ -344,14 +396,6 @@ export default function PublicHuntView() {
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        {/* Notater */}
-        {hunt.notes && (
-          <div className="card p-4">
-            <h3 className="text-sm font-medium text-text-muted mb-3">Notater</h3>
-            <p className="text-text-secondary text-sm whitespace-pre-wrap">{hunt.notes}</p>
           </div>
         )}
 

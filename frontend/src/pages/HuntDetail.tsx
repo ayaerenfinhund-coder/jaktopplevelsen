@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -141,6 +141,11 @@ export default function HuntDetail() {
   const [editStartTime, setEditStartTime] = useState(mockHunt.start_time);
   const [editEndTime, setEditEndTime] = useState(mockHunt.end_time);
   const [editLocation, setEditLocation] = useState(mockHunt.location.name);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   const gameTypeLabels: Record<string, string> = {
     moose: 'Elg',
