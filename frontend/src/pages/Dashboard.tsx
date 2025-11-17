@@ -807,14 +807,17 @@ export default function Dashboard() {
         {/* Sentrerte knapper - minimalistisk */}
         <div className="flex flex-col items-center gap-2">
           {!matchedTrack && (
-            <button
-              onClick={() => handleGarminSync()}
-              disabled={isSyncing || !selectedDog}
-              className="w-full max-w-sm flex items-center justify-center gap-2 py-2 text-sm text-text-muted hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Synkroniserer...' : 'Synk med Garmin'}
-            </button>
+            <div className="flex flex-col items-center">
+              <button
+                onClick={() => handleGarminSync()}
+                disabled={isSyncing || !selectedDog}
+                className="w-full max-w-sm flex items-center justify-center gap-2 py-2 text-sm text-text-muted hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Synkroniserer...' : 'Synk med Garmin'}
+              </button>
+              <span className="text-xs text-text-muted/60">(kan gjøres senere)</span>
+            </div>
           )}
 
           <button
@@ -824,6 +827,18 @@ export default function Dashboard() {
           >
             <Send className="w-4 h-4" />
             {isSavingQuickNote ? 'Lagrer...' : 'Lagre jakttur'}
+          </button>
+
+          <button
+            onClick={() => {
+              const element = document.getElementById('hunt-history');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            className="text-xs text-primary-400 hover:text-primary-300 transition-colors"
+          >
+            Komplett jakthistorikk →
           </button>
 
           {(totalSeen > 0 || totalHarvested > 0) && (
@@ -837,7 +852,7 @@ export default function Dashboard() {
       </div>
 
       {/* Sesong og jaktturer */}
-      <div className="p-4 bg-background-light rounded-xl space-y-4">
+      <div id="hunt-history" className="p-4 bg-background-light rounded-xl space-y-4">
         {/* Sesongnavigering */}
         <div className="flex items-center justify-between">
           <button
