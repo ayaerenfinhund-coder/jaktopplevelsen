@@ -1,0 +1,18 @@
+{
+  "name": "JaktLogg",
+  "short_name": "JaktLogg",
+  "description": "Track and document your hunting experiences",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#166534",
+  "theme_color": "#166534",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
