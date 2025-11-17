@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -19,6 +19,9 @@ import {
   CloudSnow,
   Sun,
   CloudFog,
+  Play,
+  Pause,
+  RotateCcw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -135,6 +138,12 @@ export default function HuntDetail() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesText, setNotesText] = useState(mockHunt.notes);
 
+  // Track playback animation
+  const [animationTime, setAnimationTime] = useState(100);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const animationRef = useRef<number | null>(null);
+
   // Edit form state
   const [editTitle, setEditTitle] = useState(mockHunt.title);
   const [editDate, setEditDate] = useState(mockHunt.date);
@@ -146,6 +155,44 @@ export default function HuntDetail() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
+
+  // Animation playback effect
+  useEffect(() => {
+    if (isPlaying && animationTime < 100) {
+      const animate = () => {
+        setAnimationTime((prev) => {
+          const next = prev + (0.5 * playbackSpeed);
+          if (next >= 100) {
+            setIsPlaying(false);
+            return 100;
+          }
+          return next;
+        });
+        animationRef.current = requestAnimationFrame(animate);
+      };
+      animationRef.current = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isPlaying, playbackSpeed, animationTime]);
+
+  const handlePlayPause = () => {
+    if (animationTime >= 100) {
+      setAnimationTime(0);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleReset = () => {
+    setAnimationTime(0);
+    setIsPlaying(false);
+  };
 
   const gameTypeLabels: Record<string, string> = {
     moose: 'Elg',
@@ -280,7 +327,69 @@ export default function HuntDetail() {
           tracks={tracks}
           center={hunt.location.coordinates}
           initialHeight="medium"
+          animationTime={animationTime}
         />
+
+        {/* Playback Controls */}
+        {tracks.length > 0 && (
+          <div className="p-4 border-t border-background-lighter">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handlePlayPause}
+                className="p-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
+                title={isPlaying ? 'Pause' : 'Spill av'}
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5" />
+                )}
+              </button>
+
+              <button
+                onClick={handleReset}
+                className="p-2.5 bg-background-lighter hover:bg-background text-text-muted rounded-lg transition-colors"
+                title="Start på nytt"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
+
+              <div className="flex-1">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={animationTime}
+                  onChange={(e) => {
+                    setAnimationTime(parseFloat(e.target.value));
+                    setIsPlaying(false);
+                  }}
+                  className="w-full h-2 bg-background-lighter rounded-lg appearance-none cursor-pointer slider-track"
+                />
+              </div>
+
+              <span className="text-sm font-mono text-text-muted min-w-[50px] text-right">
+                {Math.round(animationTime)}%
+              </span>
+
+              <select
+                value={playbackSpeed}
+                onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+                className="bg-background-lighter text-text-primary text-sm rounded-lg px-2 py-1.5 border-0 focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="0.5">0.5x</option>
+                <option value="1">1x</option>
+                <option value="2">2x</option>
+                <option value="4">4x</option>
+              </select>
+            </div>
+
+            <p className="text-xs text-text-muted mt-2">
+              Spill av hundespor for å se jakten utfolde seg på kartet
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 2. Notater */}

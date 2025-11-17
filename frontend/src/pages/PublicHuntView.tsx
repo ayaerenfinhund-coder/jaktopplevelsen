@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Calendar,
@@ -14,6 +14,9 @@ import {
   CloudSnow,
   Sun,
   CloudFog,
+  Play,
+  Pause,
+  RotateCcw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -104,6 +107,12 @@ export default function PublicHuntView() {
   const [error, setError] = useState<string | null>(null);
   const [isExpired, setIsExpired] = useState(false);
 
+  // Track playback animation
+  const [animationTime, setAnimationTime] = useState(100);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const animationRef = useRef<number | null>(null);
+
   useEffect(() => {
     const loadSharedHunt = async () => {
       setIsLoading(true);
@@ -145,6 +154,44 @@ export default function PublicHuntView() {
 
     loadSharedHunt();
   }, [shareId]);
+
+  // Animation playback effect
+  useEffect(() => {
+    if (isPlaying && animationTime < 100) {
+      const animate = () => {
+        setAnimationTime((prev) => {
+          const next = prev + (0.5 * playbackSpeed);
+          if (next >= 100) {
+            setIsPlaying(false);
+            return 100;
+          }
+          return next;
+        });
+        animationRef.current = requestAnimationFrame(animate);
+      };
+      animationRef.current = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isPlaying, playbackSpeed, animationTime]);
+
+  const handlePlayPause = () => {
+    if (animationTime >= 100) {
+      setAnimationTime(0);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleReset = () => {
+    setAnimationTime(0);
+    setIsPlaying(false);
+  };
 
   const gameTypeLabels: Record<string, string> = {
     moose: 'Elg',
@@ -262,7 +309,67 @@ export default function PublicHuntView() {
               center={[hunt.location.coordinates[0], hunt.location.coordinates[1]]}
               zoom={14}
               initialHeight="medium"
+              animationTime={animationTime}
             />
+
+            {/* Playback Controls */}
+            <div className="p-4 border-t border-background-lighter">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handlePlayPause}
+                  className="p-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
+                  title={isPlaying ? 'Pause' : 'Spill av'}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5" />
+                  )}
+                </button>
+
+                <button
+                  onClick={handleReset}
+                  className="p-2.5 bg-background-lighter hover:bg-background text-text-muted rounded-lg transition-colors"
+                  title="Start på nytt"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </button>
+
+                <div className="flex-1">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={animationTime}
+                    onChange={(e) => {
+                      setAnimationTime(parseFloat(e.target.value));
+                      setIsPlaying(false);
+                    }}
+                    className="w-full h-2 bg-background-lighter rounded-lg appearance-none cursor-pointer slider-track"
+                  />
+                </div>
+
+                <span className="text-sm font-mono text-text-muted min-w-[50px] text-right">
+                  {Math.round(animationTime)}%
+                </span>
+
+                <select
+                  value={playbackSpeed}
+                  onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+                  className="bg-background-lighter text-text-primary text-sm rounded-lg px-2 py-1.5 border-0 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="0.5">0.5x</option>
+                  <option value="1">1x</option>
+                  <option value="2">2x</option>
+                  <option value="4">4x</option>
+                </select>
+              </div>
+
+              <p className="text-xs text-text-muted mt-2">
+                Spill av hundespor for å se jakten utfolde seg på kartet
+              </p>
+            </div>
           </div>
         )}
 
