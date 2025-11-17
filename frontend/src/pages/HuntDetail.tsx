@@ -131,8 +131,16 @@ export default function HuntDetail() {
   const [tracks] = useState<Track[]>(mockTracks);
   const [isLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesText, setNotesText] = useState(mockHunt.notes);
+
+  // Edit form state
+  const [editTitle, setEditTitle] = useState(mockHunt.title);
+  const [editDate, setEditDate] = useState(mockHunt.date);
+  const [editStartTime, setEditStartTime] = useState(mockHunt.start_time);
+  const [editEndTime, setEditEndTime] = useState(mockHunt.end_time);
+  const [editLocation, setEditLocation] = useState(mockHunt.location.name);
 
   const gameTypeLabels: Record<string, string> = {
     moose: 'Elg',
@@ -244,7 +252,10 @@ export default function HuntDetail() {
             <Share2 className="w-5 h-5" />
             <span className="text-sm font-medium">Del</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-background-light hover:bg-background-lighter rounded-lg transition-colors">
+          <button
+            className="flex items-center gap-2 px-4 py-2.5 bg-background-light hover:bg-background-lighter rounded-lg transition-colors"
+            onClick={() => setShowEditModal(true)}
+          >
             <Edit3 className="w-5 h-5" />
             <span className="text-sm font-medium">Rediger</span>
           </button>
@@ -523,6 +534,104 @@ export default function HuntDetail() {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Rediger-modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Rediger jakttur"
+        size="lg"
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setHunt({
+              ...hunt,
+              title: editTitle,
+              date: editDate,
+              start_time: editStartTime,
+              end_time: editEndTime,
+              location: {
+                ...hunt.location,
+                name: editLocation,
+              },
+            });
+            setShowEditModal(false);
+            toast.success('Jakttur oppdatert!');
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="input-label">Tittel</label>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="input"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="input-label">Dato</label>
+              <input
+                type="date"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                className="input"
+                required
+              />
+            </div>
+            <div>
+              <label className="input-label">Sted</label>
+              <input
+                type="text"
+                value={editLocation}
+                onChange={(e) => setEditLocation(e.target.value)}
+                className="input"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="input-label">Starttid</label>
+              <input
+                type="time"
+                value={editStartTime}
+                onChange={(e) => setEditStartTime(e.target.value)}
+                className="input"
+                required
+              />
+            </div>
+            <div>
+              <label className="input-label">Sluttid</label>
+              <input
+                type="time"
+                value={editEndTime}
+                onChange={(e) => setEditEndTime(e.target.value)}
+                className="input"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowEditModal(false)}
+            >
+              Avbryt
+            </Button>
+            <Button type="submit" variant="primary">
+              Lagre endringer
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

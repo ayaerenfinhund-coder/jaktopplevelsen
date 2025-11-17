@@ -62,13 +62,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <div className="h-full overflow-y-auto scrollbar-hide pb-20">
+        <div className="flex flex-col h-[calc(100%-60px)] lg:h-full">
           {/* Main navigation */}
-          <nav className="p-4">
-            <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+          <nav className="p-3">
+            <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
               Navigasjon
             </h3>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {navigation.map((item) => (
                 <li key={item.name}>
                   <NavLink
@@ -76,7 +76,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     onClick={onClose}
                     className={({ isActive }) =>
                       clsx(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors touch-target',
+                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
                         isActive
                           ? 'bg-primary-700/20 text-primary-400'
                           : 'text-text-secondary hover:bg-background-lighter hover:text-text-primary'
@@ -92,14 +92,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </nav>
 
           {/* Quick filters */}
-          <div className="p-4 border-t border-background-lighter">
-            <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+          <div className="p-3 border-t border-background-lighter">
+            <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
               Hurtigfiltre
             </h3>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {quickFilters.map((filter) => (
                 <li key={filter.name}>
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-background-lighter hover:text-text-primary transition-colors touch-target">
+                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-background-lighter hover:text-text-primary transition-colors">
                     <filter.icon className="w-5 h-5 flex-shrink-0" />
                     <span className="font-medium flex-1 text-left">
                       {filter.name}
@@ -111,25 +111,31 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </ul>
           </div>
 
-          {/* Statistics */}
-          <div className="p-4 border-t border-background-lighter">
-            <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+          {/* Statistics - more compact */}
+          <div className="p-3 border-t border-background-lighter">
+            <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
               Statistikk
             </h3>
-            <div className="space-y-3">
-              {stats.map((stat) => (
-                <div key={stat.name} className="px-3">
-                  <div className="text-sm text-text-muted">{stat.name}</div>
-                  <div className="text-lg font-semibold text-text-primary">
+            <div className="grid grid-cols-2 gap-2 px-3">
+              {stats.slice(0, 2).map((stat) => (
+                <div key={stat.name}>
+                  <div className="text-xs text-text-muted">{stat.name}</div>
+                  <div className="text-base font-semibold text-text-primary">
                     {stat.value}
                   </div>
                 </div>
               ))}
             </div>
+            <div className="px-3 mt-2">
+              <div className="text-xs text-text-muted">{stats[2].name}</div>
+              <div className="text-base font-semibold text-text-primary">
+                {stats[2].value}
+              </div>
+            </div>
           </div>
 
           {/* Export button */}
-          <div className="p-4 border-t border-background-lighter">
+          <div className="p-3 border-t border-background-lighter mt-auto">
             <button className="w-full btn-outline btn-sm">
               <Download className="w-4 h-4 mr-2" />
               Eksporter data

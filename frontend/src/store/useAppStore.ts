@@ -25,6 +25,10 @@ interface AppState {
   setLastSelectedDog: (dogId: string) => void;
   lastSelectedLocation: string;
   setLastSelectedLocation: (location: string) => void;
+
+  // Auto-sync tracking
+  lastAutoSyncTime: number;
+  setLastAutoSyncTime: (time: number) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -69,6 +73,10 @@ export const useAppStore = create<AppState>()(
 
       lastSelectedLocation: 'Storeberg',
       setLastSelectedLocation: (location) => set({ lastSelectedLocation: location }),
+
+      // Auto-sync tracking
+      lastAutoSyncTime: 0,
+      setLastAutoSyncTime: (time) => set({ lastAutoSyncTime: time }),
     }),
     {
       name: 'jaktopplevelsen-storage',

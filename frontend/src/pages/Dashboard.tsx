@@ -206,6 +206,8 @@ export default function Dashboard() {
     lastSelectedLocation,
     setLastSelectedLocation,
     addLocation,
+    lastAutoSyncTime,
+    setLastAutoSyncTime,
   } = useAppStore();
 
   // Only active dogs for selection
@@ -259,9 +261,8 @@ export default function Dashboard() {
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
 
-  // Ref for å spore om initial sync er gjort og rate limiting
+  // Ref for rate limiting (persisted via store)
   const hasInitialSynced = useRef(false);
-  const lastSyncTime = useRef<number>(0);
   const MIN_SYNC_INTERVAL = 1800000; // 30 minutter mellom syncs for å unngå Garmin API block
 
   // Listen for PWA install prompt
@@ -377,14 +378,14 @@ export default function Dashboard() {
 
     // Rate limiting - sjekk om vi har synket nylig (ikke for initial sync)
     const now = Date.now();
-    const timeSinceLastSync = now - lastSyncTime.current;
-    if (lastSyncTime.current > 0 && timeSinceLastSync < MIN_SYNC_INTERVAL && !silent) {
+    const timeSinceLastSync = now - lastAutoSyncTime;
+    if (lastAutoSyncTime > 0 && timeSinceLastSync < MIN_SYNC_INTERVAL && !silent) {
       const minutesLeft = Math.ceil((MIN_SYNC_INTERVAL - timeSinceLastSync) / 60000);
       toast.error(`Vent ${minutesLeft} min før neste synk`);
       return;
     }
 
-    lastSyncTime.current = now;
+    setLastAutoSyncTime(now);
     setIsSyncing(true);
     try {
       // Simuler API-kall til Garmin Alpha app (1.5s for manuell, 0.5s for automatisk)
@@ -428,12 +429,16 @@ export default function Dashboard() {
     }
   };
 
-  // Automatisk synkroniser med Garmin KUN ved første innlasting
+  // Automatisk synkroniser med Garmin KUN ved første innlasting OG hvis det har gått mer enn 30 min
   useEffect(() => {
-    // Bare synk én gang ved oppstart
-    if (selectedDog && !matchedTrack && !hasInitialSynced.current) {
+    // Sjekk om vi har synket nylig (persisted i localStorage)
+    const now = Date.now();
+    const timeSinceLastSync = now - lastAutoSyncTime;
+    const shouldAutoSync = timeSinceLastSync >= MIN_SYNC_INTERVAL || lastAutoSyncTime === 0;
+
+    // Bare synk én gang ved oppstart og hvis rate limit er OK
+    if (selectedDog && !matchedTrack && !hasInitialSynced.current && shouldAutoSync) {
       hasInitialSynced.current = true;
-      lastSyncTime.current = Date.now();
 
       // Vent litt før automatisk synk
       const timer = setTimeout(() => {
@@ -441,8 +446,11 @@ export default function Dashboard() {
       }, 500);
 
       return () => clearTimeout(timer);
+    } else if (selectedDog && !hasInitialSynced.current) {
+      // Mark as synced even if we skip due to rate limit
+      hasInitialSynced.current = true;
     }
-  }, [selectedDog, matchedTrack]); // IKKE inkluder isSyncing - det skaper loop!
+  }, [selectedDog, matchedTrack, lastAutoSyncTime]); // Inkluder lastAutoSyncTime for å sjekke persistert tid
 
   const handleQuickSave = async () => {
     if (!selectedDog) {

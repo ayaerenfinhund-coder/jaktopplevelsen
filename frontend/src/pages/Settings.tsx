@@ -223,38 +223,52 @@ export default function Settings() {
           {activeTab === 'garmin' && (
             <div className="card p-6 space-y-6">
               <h2 className="text-xl font-semibold text-text-primary">
-                Garmin Connect-integrasjon
+                Garmin Alpha-integrasjon
               </h2>
 
               <div className="p-4 bg-background rounded-lg">
                 <p className="text-text-secondary mb-4">
-                  Koble til Garmin Connect for automatisk synkronisering av spor
-                  fra Alpha 200-enheten din.
+                  Importer hundespor fra din Garmin Alpha 200/200i/300-enhet via
+                  Garmin Explore-appen eller direkte GPX-filer.
                 </p>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className="input-label">Garmin Connect e-post</label>
-                    <input
-                      type="email"
-                      value={garminEmail}
-                      onChange={(e) => setGarminEmail(e.target.value)}
-                      placeholder="din@garmin-epost.no"
-                      className="input"
-                    />
+                  <div className="p-3 bg-primary-700/10 border border-primary-700/30 rounded-lg">
+                    <h4 className="font-medium text-text-primary mb-2">
+                      Slik importerer du spor:
+                    </h4>
+                    <ol className="text-sm text-text-secondary space-y-2 list-decimal list-inside">
+                      <li>Åpne Garmin Explore-appen på mobilen</li>
+                      <li>Synkroniser Alpha-enheten via Bluetooth</li>
+                      <li>Eksporter hundespor som GPX-fil</li>
+                      <li>Last opp GPX-filen nedenfor</li>
+                    </ol>
                   </div>
 
                   <div>
-                    <label className="input-label">Garmin Connect passord</label>
+                    <label className="input-label">Last opp GPX-fil</label>
                     <input
-                      type="password"
-                      value={garminPassword}
-                      onChange={(e) => setGarminPassword(e.target.value)}
-                      placeholder="••••••••"
+                      type="file"
+                      accept=".gpx"
+                      className="input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-700 file:text-white file:cursor-pointer"
+                      onChange={() => toast.success('GPX-fil mottatt! Spor vil bli importert.')}
+                    />
+                    <p className="input-helper">
+                      Støtter GPX-filer eksportert fra Garmin Explore eller Alpha-appen
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="input-label">Standard halsbånd-ID</label>
+                    <input
+                      type="text"
+                      value={garminEmail}
+                      onChange={(e) => setGarminEmail(e.target.value)}
+                      placeholder="F.eks. TT25-12345 eller T20-67890"
                       className="input"
                     />
                     <p className="input-helper">
-                      Passordet lagres kryptert og brukes kun for synkronisering
+                      Halsbånd-ID fra din Alpha TT25, T20 eller T5 tracker
                     </p>
                   </div>
 
@@ -266,18 +280,29 @@ export default function Settings() {
                       className="checkbox"
                     />
                     <span className="text-text-secondary">
-                      Automatisk synkronisering (sjekk for nye spor daglig)
+                      Husk siste importinnstillinger
                     </span>
                   </label>
                 </div>
               </div>
 
+              <div className="p-4 bg-background rounded-lg">
+                <h3 className="font-medium text-text-primary mb-2">
+                  Kompatible enheter
+                </h3>
+                <ul className="text-sm text-text-muted space-y-1">
+                  <li>• Garmin Alpha 200/200i/300/300i</li>
+                  <li>• Garmin Alpha TT25/T20/T5 halsbånd</li>
+                  <li>• Garmin Astro 430/900</li>
+                </ul>
+              </div>
+
               <div className="flex gap-3">
                 <Button
                   variant="outline"
-                  leftIcon={<RefreshCw className="w-4 h-4" />}
+                  leftIcon={<Download className="w-4 h-4" />}
                 >
-                  Synkroniser nå
+                  Importer fra fil
                 </Button>
                 <Button
                   variant="primary"
