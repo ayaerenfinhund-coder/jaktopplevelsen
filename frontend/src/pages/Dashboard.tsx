@@ -1049,15 +1049,15 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      {/* PWA Install Button - Bottom Center */}
+      {/* PWA Install Button - Fixed at bottom, minimalist */}
       {showInstallButton && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-background-light/95 backdrop-blur-sm border-t border-background-lighter p-3 z-40">
           <button
             onClick={handleInstallApp}
-            className="flex items-center gap-3 px-6 py-3 bg-primary-700 hover:bg-primary-600 text-white rounded-full shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95"
+            className="w-full flex items-center justify-center gap-2 text-sm text-primary-400 hover:text-primary-300 transition-colors"
           >
-            <Download className="w-5 h-5" />
-            <span className="font-semibold">Installer som app</span>
+            <Download className="w-4 h-4" />
+            <span>Installer som app</span>
           </button>
         </div>
       )}
