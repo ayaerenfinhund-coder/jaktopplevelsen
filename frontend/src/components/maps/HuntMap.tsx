@@ -35,6 +35,7 @@ export default function HuntMap({
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [measuredDistance, setMeasuredDistance] = useState<number | null>(null);
   const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
+  const [isPlayingAnimation, setIsPlayingAnimation] = useState(false);
 
   const heightClasses = {
     small: 'h-[300px]',
@@ -78,6 +79,30 @@ export default function HuntMap({
     }
   }, [tracks]);
 
+  // Track if we're currently animating (check if animationTime is changing)
+  useEffect(() => {
+    const prevTime = animationTime;
+    const timer = setTimeout(() => {
+      setIsPlayingAnimation(animationTime > prevTime && animationTime < 100);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [animationTime]);
+
+  // Cinematic camera rotation during playback
+  useEffect(() => {
+    if (!mapRef.current || !isPlayingAnimation || !show3DTerrain) return;
+
+    const map = mapRef.current.getMap();
+    const currentBearing = map.getBearing();
+
+    // Slowly rotate camera during playback
+    map.easeTo({
+      bearing: currentBearing + 0.5,
+      duration: 500,
+      easing: (t) => t,
+    });
+  }, [animationTime, isPlayingAnimation, show3DTerrain]);
+
   // Enable 3D terrain
   useEffect(() => {
     if (!mapRef.current) return;
@@ -94,7 +119,7 @@ export default function HuntMap({
             maxzoom: 14,
           });
         }
-        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 2.5 });
       });
     } else {
       map.setTerrain(null);
@@ -137,8 +162,8 @@ export default function HuntMap({
             type="line"
             paint={{
               'line-color': '#000',
-              'line-width': 7,
-              'line-opacity': 0.3,
+              'line-width': 10,
+              'line-opacity': 0.4,
             }}
             layout={{
               'line-cap': 'round',
@@ -153,8 +178,8 @@ export default function HuntMap({
             type="line"
             paint={{
               'line-color': track.color,
-              'line-width': 5,
-              'line-opacity': 0.9,
+              'line-width': 6,
+              'line-opacity': 0.95,
             }}
             layout={{
               'line-cap': 'round',
@@ -233,12 +258,12 @@ export default function HuntMap({
           longitude: center[1],
           latitude: center[0],
           zoom: zoom,
-          pitch: show3DTerrain ? 45 : 0,
+          pitch: show3DTerrain ? 60 : 0,
           bearing: 0,
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle={mapStyle}
-        terrain={show3DTerrain ? { source: 'mapbox-dem', exaggeration: 1.5 } : undefined}
+        terrain={show3DTerrain ? { source: 'mapbox-dem', exaggeration: 2.5 } : undefined}
         onClick={handleMapClick}
       >
         {/* 3D terrain source */}

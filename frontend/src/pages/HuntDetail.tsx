@@ -378,6 +378,7 @@ export default function HuntDetail() {
                 onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
                 className="bg-background-lighter text-text-primary text-sm rounded-lg px-2 py-1.5 border-0 focus:ring-2 focus:ring-primary-500"
               >
+                <option value="0.2">0.2x</option>
                 <option value="0.5">0.5x</option>
                 <option value="1">1x</option>
                 <option value="2">2x</option>
