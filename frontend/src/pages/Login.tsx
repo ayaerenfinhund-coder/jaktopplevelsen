@@ -48,16 +48,12 @@ export default function Login() {
           </div>
           <h1 className="text-2xl font-bold text-text-primary">Jaktopplevelsen</h1>
           <p className="text-text-muted mt-2">
-            Logg og spor dine jaktturer med Garmin Alpha 200
+            Jaktlogg
           </p>
         </div>
 
         {/* Login Card */}
         <div className="card p-6">
-          <h2 className="text-xl font-semibold text-text-primary mb-6 text-center">
-            Logg inn
-          </h2>
-
           <Button
             onClick={handleGoogleSignIn}
             variant="primary"
@@ -87,18 +83,6 @@ export default function Login() {
             Logg inn med Google
           </Button>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-text-muted text-sm mt-6">
-          Ved å logge inn godtar du våre{' '}
-          <a href="#" className="text-primary-400 hover:underline">
-            vilkår
-          </a>{' '}
-          og{' '}
-          <a href="#" className="text-primary-400 hover:underline">
-            personvernerklæring
-          </a>
-        </p>
       </div>
     </div>
   );
