@@ -830,12 +830,7 @@ export default function Dashboard() {
           </button>
 
           <button
-            onClick={() => {
-              const element = document.getElementById('hunt-history');
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
+            onClick={() => navigate('/statistics')}
             className="text-xs text-primary-400 hover:text-primary-300 transition-colors"
           >
             Komplett jakthistorikk →

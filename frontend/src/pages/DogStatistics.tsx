@@ -344,13 +344,14 @@ export default function DogStatistics() {
             </h3>
             <div className="space-y-3">
               {dogData.map((entry) => (
-                <div
+                <button
                   key={entry.id}
-                  className="bg-background rounded-xl p-4"
+                  onClick={() => navigate('/hunt/1')} // In production: /hunt/{entry.hunt_id}
+                  className="w-full text-left bg-background rounded-xl p-4 hover:bg-background-lighter transition-colors cursor-pointer group"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="text-base font-semibold text-text-primary">
+                      <p className="text-base font-semibold text-text-primary group-hover:text-primary-400 transition-colors">
                         {entry.location}
                       </p>
                       <p className="text-sm text-text-muted">
@@ -380,7 +381,7 @@ export default function DogStatistics() {
                       <p className="font-medium text-text-primary">{entry.elevation_gain_m}m</p>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
