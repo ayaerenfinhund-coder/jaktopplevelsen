@@ -31,112 +31,19 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import HuntMap from '../components/maps/HuntMap';
 import PhotoGallery from '../components/gallery/PhotoGallery';
 import toast from 'react-hot-toast';
+import { huntsService } from '../services/huntsService';
 import type { Hunt, Track } from '../types';
 
-// Mock-data
-const mockHunt: Hunt = {
-  id: '1',
-  user_id: 'user1',
-  title: 'Morgenjakt ved Storeberg',
-  date: '2024-11-10',
-  start_time: '07:00',
-  end_time: '11:30',
-  location: {
-    name: 'Storeberg',
-    region: 'Asker',
-    country: 'Norge',
-    coordinates: [59.89, 10.45],
-  },
-  weather: {
-    temperature: 5,
-    humidity: 80,
-    wind_speed: 2,
-    wind_direction: 'SV',
-    precipitation: 'none',
-    conditions: 'cloudy',
-  },
-  game_type: ['roe_deer', 'hare'],
-  game_seen: [
-    { type: 'roe_deer', count: 2, time: '08:45', notes: 'Bukk og rå' },
-    { type: 'hare', count: 1, time: '10:00' },
-  ],
-  game_harvested: [],
-  dogs: ['rolex'],
-  tracks: [],
-  photos: [],
-  notes:
-    'Rolex jobbet utmerket i terrenget rundt Storeberg. Fint høstvær med god markering.',
-  tags: ['morgenjakt', 'storeberg'],
-  is_favorite: true,
-  created_at: '2024-11-10T11:30:00Z',
-  updated_at: '2024-11-10T11:30:00Z',
-};
-
-const mockTracks: Track[] = [
-  {
-    id: 'track1',
-    hunt_id: '1',
-    dog_id: 'rolex',
-    name: 'Rolex - Storeberg',
-    source: 'garmin',
-    geojson: {
-      type: 'LineString',
-      coordinates: [
-        [10.45, 59.89],
-        [10.452, 59.891],
-        [10.455, 59.893],
-        [10.458, 59.895],
-        [10.46, 59.894],
-        [10.462, 59.892],
-        [10.465, 59.89],
-        [10.468, 59.888],
-        [10.47, 59.886],
-        [10.472, 59.885],
-        [10.475, 59.887],
-        [10.478, 59.889],
-        [10.48, 59.891],
-        [10.478, 59.893],
-        [10.475, 59.895],
-        [10.472, 59.894],
-        [10.47, 59.892],
-        [10.468, 59.89],
-      ],
-    },
-    statistics: {
-      distance_km: 6.8,
-      duration_minutes: 270,
-      avg_speed_kmh: 1.5,
-      max_speed_kmh: 8.2,
-      elevation_gain_m: 185,
-      elevation_loss_m: 180,
-      min_elevation_m: 95,
-      max_elevation_m: 280,
-      bounding_box: [
-        [59.885, 10.45],
-        [59.895, 10.48],
-      ],
-    },
-    color: '#D4752E',
-    start_time: '2024-11-10T07:00:00Z',
-    end_time: '2024-11-10T11:30:00Z',
-    created_at: '2024-11-10T11:30:00Z',
-  },
-];
-
-const mockDogs = [
-  { id: 'rolex', name: 'Rolex', breed: 'Dachs', color: '#D4752E' },
-];
-
 export default function HuntDetail() {
-  const { id: _id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [hunt, setHunt] = useState<Hunt | null>(mockHunt);
-  const [tracks] = useState<Track[]>(mockTracks);
-  const [isLoading] = useState(false);
+  const [hunt, setHunt] = useState<Hunt | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
-  const [notesText, setNotesText] = useState(mockHunt.notes);
+  const [notesText, setNotesText] = useState('');
 
   // Track playback animation
   const [animationTime, setAnimationTime] = useState(100);
@@ -145,11 +52,50 @@ export default function HuntDetail() {
   const animationRef = useRef<number | null>(null);
 
   // Edit form state
-  const [editTitle, setEditTitle] = useState(mockHunt.title);
-  const [editDate, setEditDate] = useState(mockHunt.date);
-  const [editStartTime, setEditStartTime] = useState(mockHunt.start_time);
-  const [editEndTime, setEditEndTime] = useState(mockHunt.end_time);
-  const [editLocation, setEditLocation] = useState(mockHunt.location.name);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+
+  // Fetch hunt data
+  useEffect(() => {
+    const fetchHunt = async () => {
+      if (!id) {
+        navigate('/');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const huntData = await huntsService.getHunt(id);
+
+        if (!huntData) {
+          toast.error('Jakttur ikke funnet');
+          navigate('/');
+          return;
+        }
+
+        setHunt(huntData);
+        setNotesText(huntData.notes || '');
+        setEditTitle(huntData.title);
+        setEditDate(huntData.date);
+        setEditStartTime(huntData.start_time);
+        setEditEndTime(huntData.end_time);
+        setEditLocation(huntData.location.name);
+        // TODO: Fetch tracks for this hunt from Firestore
+        setTracks([]);
+      } catch (error) {
+        console.error('Error fetching hunt:', error);
+        toast.error('Kunne ikke laste jakttur');
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHunt();
+  }, [id, navigate]);
 
   // Scroll to top when component mounts
   useEffect(() => {

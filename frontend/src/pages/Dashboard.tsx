@@ -27,100 +27,10 @@ import Modal from '../components/common/Modal';
 import { HuntCardSkeleton } from '../components/common/Skeleton';
 import toast from 'react-hot-toast';
 import { fetchWeatherFromYr } from '../services/weatherService';
+import { huntsService } from '../services/huntsService';
 import { useAppStore } from '../store/useAppStore';
 import type { Hunt } from '../types';
 
-// Mock-data for demonstrasjon
-const mockHunts: Hunt[] = [
-  {
-    id: '1',
-    user_id: 'user1',
-    title: 'Morgenjakt ved Storeberg',
-    date: '2024-11-10',
-    start_time: '07:00',
-    end_time: '11:30',
-    location: {
-      name: 'Storeberg',
-      region: 'Asker',
-      country: 'Norge',
-      coordinates: [59.89, 10.45],
-    },
-    weather: {
-      temperature: 5,
-      humidity: 80,
-      wind_speed: 2,
-      wind_direction: 'SV',
-      precipitation: 'none',
-      conditions: 'cloudy',
-    },
-    game_type: ['roe_deer', 'hare'],
-    game_seen: [
-      { type: 'roe_deer', count: 2, time: '08:30' },
-      { type: 'hare', count: 1, time: '09:15' },
-    ],
-    game_harvested: [],
-    dogs: ['rolex'],
-    tracks: [],
-    photos: [],
-    notes: 'Rolex jobbet utmerket i terrenget rundt vannet',
-    tags: ['morgenjakt', 'storeberg'],
-    is_favorite: false,
-    created_at: '2024-11-10T11:30:00Z',
-    updated_at: '2024-11-10T11:30:00Z',
-  },
-  {
-    id: '2',
-    user_id: 'user1',
-    title: 'Ettermiddagsjakt ved Tveiter',
-    date: '2024-11-08',
-    start_time: '14:00',
-    end_time: '17:30',
-    location: {
-      name: 'Tveiter',
-      region: 'Asker',
-      country: 'Norge',
-      coordinates: [59.89, 10.45],
-    },
-    game_type: ['hare'],
-    game_seen: [{ type: 'hare', count: 3, time: '15:30' }],
-    game_harvested: [{ type: 'hare', count: 1, time: '16:00' }],
-    dogs: ['rolex'],
-    tracks: [],
-    photos: [],
-    notes: 'Godt vær og fin jakt',
-    tags: ['ettermiddagsjakt', 'hare'],
-    is_favorite: false,
-    created_at: '2024-11-08T17:30:00Z',
-    updated_at: '2024-11-08T17:30:00Z',
-  },
-  {
-    id: '3',
-    user_id: 'user1',
-    title: 'Hanejakt Storeberg',
-    date: '2023-10-15',
-    start_time: '06:00',
-    end_time: '12:00',
-    location: {
-      name: 'Storeberg',
-      region: 'Asker',
-      country: 'Norge',
-      coordinates: [59.89, 10.45],
-    },
-    game_type: ['roe_deer'],
-    game_seen: [{ type: 'roe_deer', count: 4, time: '08:00' }],
-    game_harvested: [{ type: 'roe_deer', count: 1, time: '10:30' }],
-    dogs: ['rolex'],
-    tracks: [],
-    photos: [],
-    notes: 'God dag med Rolex',
-    tags: ['morgenjakt'],
-    is_favorite: false,
-    created_at: '2023-10-15T12:00:00Z',
-    updated_at: '2023-10-15T12:00:00Z',
-  },
-];
-
-// Location coordinates for weather lookup
 const locationCoords: Record<string, [number, number]> = {
   Storeberg: [59.891, 10.451],
   Tveiter: [59.885, 10.448],
@@ -137,38 +47,6 @@ const gameTypes = [
   { id: 'fox', name: 'Rev' },
 ];
 
-// Mock GPS tracks from Garmin
-interface GarminTrack {
-  id: string;
-  dogId: string;
-  dogName: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  distance_km: number;
-  duration_minutes: number;
-  coordinates: [number, number][];
-  detectedLocation?: string;
-}
-
-const mockGarminTracks: GarminTrack[] = [
-  {
-    id: 'track-today',
-    dogId: 'rolex',
-    dogName: 'Rolex',
-    date: new Date().toISOString().split('T')[0],
-    startTime: '07:30',
-    endTime: '11:15',
-    distance_km: 8.3,
-    duration_minutes: 225,
-    coordinates: [
-      [59.891, 10.451],
-      [59.892, 10.453],
-      [59.893, 10.452],
-    ],
-    detectedLocation: 'Storeberg',
-  },
-];
 
 interface WeatherData {
   temperature: number;
@@ -193,8 +71,8 @@ function getHuntingSeason(date: string): string {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [hunts] = useState<Hunt[]>(mockHunts);
-  const [isLoading] = useState(false);
+  const [hunts, setHunts] = useState<Hunt[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filterGame, setFilterGame] = useState('');
@@ -245,10 +123,8 @@ export default function Dashboard() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(false);
 
-  // GPS-synk
+  // GPS-synk (disabled for now - no Garmin integration yet)
   const [isSyncing, setIsSyncing] = useState(false);
-  const [matchedTrack, setMatchedTrack] = useState<GarminTrack | null>(null);
-  const [showTrackConfirm, setShowTrackConfirm] = useState(false);
 
   // Bilder
   const [photos, setPhotos] = useState<string[]>([]);
@@ -276,6 +152,24 @@ export default function Dashboard() {
   // Ref for rate limiting (persisted via store)
   const hasInitialSynced = useRef(false);
   const MIN_SYNC_INTERVAL = 1800000; // 30 minutter mellom syncs for å unngå Garmin API block
+
+  // Fetch hunts from Firestore
+  useEffect(() => {
+    const fetchHunts = async () => {
+      try {
+        setIsLoading(true);
+        const userHunts = await huntsService.getUserHunts();
+        setHunts(userHunts);
+      } catch (error) {
+        console.error('Error fetching hunts:', error);
+        toast.error('Kunne ikke laste jaktopplevelser');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHunts();
+  }, []);
 
   // Listen for PWA install prompt
   useEffect(() => {
@@ -473,13 +367,13 @@ export default function Dashboard() {
       // Simuler API-kall til Garmin Alpha app (1.5s for manuell, 0.5s for automatisk)
       await new Promise((resolve) => setTimeout(resolve, silent ? 500 : 1500));
 
-      const matched = mockGarminTracks.find(
-        (track) => track.date === todayDate && track.dogId === selectedDog
-      );
+      // TODO: Implement real Garmin integration
+      // For now, no tracks will be found
+      const matched = null;
 
       if (matched) {
-        setMatchedTrack(matched);
-        setShowTrackConfirm(true);
+        // This code won't run until Garmin integration is implemented
+        toast.success('GPS-spor funnet!');
 
         if (matched.detectedLocation) {
           setSelectedLocation(matched.detectedLocation);
