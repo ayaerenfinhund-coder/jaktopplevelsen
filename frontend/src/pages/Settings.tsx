@@ -11,10 +11,51 @@ import {
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import toast from 'react-hot-toast';
+import { useAppStore } from '../store/useAppStore';
+import { exportAllDataAsJSON, generateGPX, downloadFile } from '../utils/exportData';
+import type { Hunt, Track } from '../types';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
+  const { dogs } = useAppStore();
+
+  // Mock hunts for export (in production, this would come from the store/database)
+  const mockHuntsForExport: Hunt[] = [
+    {
+      id: '1',
+      user_id: 'user1',
+      title: 'Morgenjakt ved Storeberg',
+      date: '2024-11-10',
+      start_time: '07:00',
+      end_time: '11:30',
+      location: { name: 'Storeberg', region: 'Asker', country: 'Norge', coordinates: [59.89, 10.45] },
+      weather: { temperature: 5, humidity: 80, wind_speed: 2, wind_direction: 'SV', precipitation: 'none', conditions: 'cloudy' },
+      game_type: ['roe_deer', 'hare'],
+      game_seen: [{ type: 'roe_deer', count: 2, time: '08:30' }, { type: 'hare', count: 1, time: '09:15' }],
+      game_harvested: [],
+      dogs: ['rolex'],
+      tracks: [
+        {
+          id: 'track1',
+          name: 'Rolex - Storeberg',
+          dog_id: 'rolex',
+          color: '#D4752E',
+          geojson: {
+            type: 'LineString',
+            coordinates: [[10.451, 59.891, 120], [10.453, 59.892, 145], [10.452, 59.893, 160]],
+          },
+          statistics: { distance_km: 8.3, duration_minutes: 225, avg_speed_kmh: 2.2, max_speed_kmh: 12.5, elevation_gain_m: 245, elevation_loss_m: 240 },
+        },
+      ],
+      photos: [],
+      notes: 'Rolex jobbet utmerket',
+      tags: ['morgenjakt'],
+      is_favorite: false,
+      created_at: '2024-11-10T11:30:00Z',
+      updated_at: '2024-11-10T11:30:00Z',
+    },
+  ];
 
   // Profilinnstillinger
   const [name, setName] = useState('Ola Nordmann');
@@ -43,7 +84,28 @@ export default function Settings() {
   };
 
   const handleExportData = () => {
-    toast.success('Eksport startet! Du vil motta en e-post når den er klar.');
+    try {
+      exportAllDataAsJSON(mockHuntsForExport, dogs);
+      toast.success('Data eksportert som JSON!');
+    } catch (error) {
+      toast.error('Kunne ikke eksportere data');
+    }
+  };
+
+  const handleExportGPX = () => {
+    try {
+      const allTracks: Track[] = mockHuntsForExport.flatMap((h) => h.tracks);
+      if (allTracks.length === 0) {
+        toast.error('Ingen GPS-spor å eksportere');
+        return;
+      }
+      const gpx = generateGPX(allTracks, 'Alle jaktturer');
+      const date = new Date().toISOString().split('T')[0];
+      downloadFile(gpx, `jaktopplevelsen_all_tracks_${date}.gpx`, 'application/gpx+xml');
+      toast.success('GPX-filer eksportert!');
+    } catch (error) {
+      toast.error('Kunne ikke eksportere GPX');
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -349,6 +411,7 @@ export default function Settings() {
                   <Button
                     variant="outline"
                     leftIcon={<Download className="w-4 h-4" />}
+                    onClick={handleExportGPX}
                   >
                     Eksporter GPX
                   </Button>

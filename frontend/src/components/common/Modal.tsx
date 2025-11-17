@@ -1,6 +1,7 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useId } from 'react';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ModalProps {
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   showCloseButton?: boolean;
+  ariaDescription?: string;
 }
 
 const sizeClasses = {
@@ -26,7 +28,12 @@ export default function Modal({
   children,
   size = 'md',
   showCloseButton = true,
+  ariaDescription,
 }: ModalProps) {
+  const focusTrapRef = useFocusTrap(isOpen);
+  const titleId = useId();
+  const descriptionId = useId();
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -48,15 +55,23 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? titleId : undefined}
+      aria-describedby={ariaDescription ? descriptionId : undefined}
+    >
       <div
+        ref={focusTrapRef}
         className={clsx('modal-content', sizeClasses[size])}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between p-4 border-b border-background-lighter">
             {title && (
-              <h2 className="text-lg font-semibold text-text-primary">
+              <h2 id={titleId} className="text-lg font-semibold text-text-primary">
                 {title}
               </h2>
             )}
@@ -64,11 +79,16 @@ export default function Modal({
               <button
                 onClick={onClose}
                 className="btn-ghost btn-icon-sm ml-auto"
-                aria-label="Lukk"
+                aria-label="Lukk dialog"
               >
                 <X className="w-5 h-5" />
               </button>
             )}
+          </div>
+        )}
+        {ariaDescription && (
+          <div id={descriptionId} className="sr-only">
+            {ariaDescription}
           </div>
         )}
         <div className="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">

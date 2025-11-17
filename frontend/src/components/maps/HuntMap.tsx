@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -9,9 +9,11 @@ import {
   LayersControl,
   WMSTileLayer,
   ScaleControl,
+  Circle,
+  useMapEvents,
 } from 'react-leaflet';
-import { LatLngBounds, Icon } from 'leaflet';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { LatLngBounds, Icon, LatLng } from 'leaflet';
+import { Maximize2, Minimize2, Ruler, Flame, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import type { Track } from '../../types';
 
@@ -60,6 +62,123 @@ function MapBoundsUpdater({ tracks }: { tracks: Track[] }) {
   }, [tracks, map]);
 
   return null;
+}
+
+// Distance measurement tool
+interface MeasurePoint {
+  lat: number;
+  lng: number;
+}
+
+function DistanceMeasurer({
+  isActive,
+  onMeasure,
+}: {
+  isActive: boolean;
+  onMeasure: (distance: number) => void;
+}) {
+  const [points, setPoints] = useState<MeasurePoint[]>([]);
+  const map = useMap();
+
+  useMapEvents({
+    click(e) {
+      if (!isActive) return;
+
+      const newPoints = [...points, { lat: e.latlng.lat, lng: e.latlng.lng }];
+      setPoints(newPoints);
+
+      if (newPoints.length >= 2) {
+        const totalDistance = calculateTotalDistance(newPoints);
+        onMeasure(totalDistance);
+      }
+    },
+  });
+
+  const calculateTotalDistance = (pts: MeasurePoint[]): number => {
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const lat1 = pts[i - 1].lat;
+      const lon1 = pts[i - 1].lng;
+      const lat2 = pts[i].lat;
+      const lon2 = pts[i].lng;
+
+      const R = 6371; // Earth's radius in km
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      total += R * c;
+    }
+    return total;
+  };
+
+  useEffect(() => {
+    if (!isActive) {
+      setPoints([]);
+    }
+  }, [isActive]);
+
+  if (!isActive || points.length === 0) return null;
+
+  const linePositions = points.map((p) => [p.lat, p.lng] as [number, number]);
+
+  return (
+    <>
+      <Polyline
+        positions={linePositions}
+        pathOptions={{
+          color: '#FF6B6B',
+          weight: 3,
+          dashArray: '10, 10',
+          opacity: 0.8,
+        }}
+      />
+      {points.map((point, i) => (
+        <Circle
+          key={i}
+          center={[point.lat, point.lng]}
+          radius={20}
+          pathOptions={{
+            color: '#FF6B6B',
+            fillColor: '#FF6B6B',
+            fillOpacity: 0.8,
+            weight: 2,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+// Generate heatmap data from tracks
+function generateHeatmapData(tracks: Track[]): { lat: number; lng: number; intensity: number }[] {
+  const heatPoints: Map<string, number> = new Map();
+
+  tracks.forEach((track) => {
+    track.geojson.coordinates.forEach((coord) => {
+      // Round to ~100m grid
+      const gridLat = Math.round(coord[1] * 1000) / 1000;
+      const gridLng = Math.round(coord[0] * 1000) / 1000;
+      const key = `${gridLat},${gridLng}`;
+      heatPoints.set(key, (heatPoints.get(key) || 0) + 1);
+    });
+  });
+
+  const maxIntensity = Math.max(...heatPoints.values());
+
+  return Array.from(heatPoints.entries()).map(([key, count]) => {
+    const [lat, lng] = key.split(',').map(Number);
+    return {
+      lat,
+      lng,
+      intensity: count / maxIntensity,
+    };
+  });
 }
 
 // Kartverket WMTS - samme som norgeskart.no bruker
@@ -120,6 +239,12 @@ export default function HuntMap({
   const [showPropertyBoundaries, setShowPropertyBoundaries] = useState(false);
   const [showLandUse, setShowLandUse] = useState(false);
   const [mapHeight, setMapHeight] = useState<'small' | 'medium' | 'large'>(initialHeight);
+
+  // Map tools
+  const [isMeasuring, setIsMeasuring] = useState(false);
+  const [measuredDistance, setMeasuredDistance] = useState<number | null>(null);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const heatmapData = useMemo(() => generateHeatmapData(tracks), [tracks]);
 
   const heightClasses = {
     small: 'h-[300px]',
@@ -277,6 +402,28 @@ export default function HuntMap({
           );
         })}
 
+        {/* Heatmap overlay */}
+        {showHeatmap &&
+          heatmapData.map((point, i) => (
+            <Circle
+              key={`heat-${i}`}
+              center={[point.lat, point.lng]}
+              radius={50 + point.intensity * 100}
+              pathOptions={{
+                color: 'transparent',
+                fillColor: `hsl(${30 - point.intensity * 30}, 100%, 50%)`,
+                fillOpacity: 0.3 + point.intensity * 0.4,
+                weight: 0,
+              }}
+            />
+          ))}
+
+        {/* Distance measurement tool */}
+        <DistanceMeasurer
+          isActive={isMeasuring}
+          onMeasure={setMeasuredDistance}
+        />
+
         <MapBoundsUpdater tracks={tracks} />
         <ScaleControl position="bottomleft" imperial={false} />
       </MapContainer>
@@ -304,6 +451,58 @@ export default function HuntMap({
           </label>
         </div>
       </div>
+
+      {/* Map tools */}
+      <div className="absolute top-16 left-4 flex flex-col gap-2 z-[1000]">
+        <button
+          onClick={() => {
+            setIsMeasuring(!isMeasuring);
+            if (isMeasuring) {
+              setMeasuredDistance(null);
+            }
+          }}
+          className={`p-2 rounded shadow transition-colors ${
+            isMeasuring
+              ? 'bg-accent-500 text-white'
+              : 'bg-background-light/90 backdrop-blur-sm text-text-muted hover:text-text-primary'
+          }`}
+          title="Mål avstand"
+        >
+          <Ruler className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setShowHeatmap(!showHeatmap)}
+          className={`p-2 rounded shadow transition-colors ${
+            showHeatmap
+              ? 'bg-accent-500 text-white'
+              : 'bg-background-light/90 backdrop-blur-sm text-text-muted hover:text-text-primary'
+          }`}
+          title="Vis heatmap"
+        >
+          <Flame className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Measurement result */}
+      {isMeasuring && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-accent-500 text-white px-4 py-2 rounded-lg shadow-lg z-[1000] flex items-center gap-2">
+          <Ruler className="w-4 h-4" />
+          <span className="text-sm font-medium">
+            {measuredDistance !== null
+              ? `${measuredDistance.toFixed(2)} km`
+              : 'Klikk for å måle avstand'}
+          </span>
+          <button
+            onClick={() => {
+              setIsMeasuring(false);
+              setMeasuredDistance(null);
+            }}
+            className="ml-2 hover:bg-white/20 p-1 rounded"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
       {/* Sporinfo panel */}
       {selectedTrack && (

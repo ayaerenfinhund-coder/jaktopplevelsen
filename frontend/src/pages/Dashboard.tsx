@@ -24,6 +24,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameM
 import { nb } from 'date-fns/locale';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Modal from '../components/common/Modal';
+import { HuntCardSkeleton } from '../components/common/Skeleton';
 import toast from 'react-hot-toast';
 import { fetchWeatherFromYr } from '../services/weatherService';
 import { useAppStore } from '../store/useAppStore';
@@ -196,6 +197,9 @@ export default function Dashboard() {
   const [isLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [filterGame, setFilterGame] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
+  const [filterDog, setFilterDog] = useState('');
 
   // Zustand store for shared state
   const {
@@ -261,6 +265,14 @@ export default function Dashboard() {
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
 
+  // Form validation
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Draft auto-save
+  const [hasDraft, setHasDraft] = useState(false);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
+  const DRAFT_KEY = 'jaktopplevelsen_hunt_draft';
+
   // Ref for rate limiting (persisted via store)
   const hasInitialSynced = useRef(false);
   const MIN_SYNC_INTERVAL = 1800000; // 30 minutter mellom syncs for å unngå Garmin API block
@@ -275,6 +287,76 @@ export default function Dashboard() {
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
+
+  // Check for saved draft on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_KEY);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        // Check if draft has meaningful content
+        if (draft.quickNote || Object.keys(draft.gameSeen || {}).length > 0 || draft.photos?.length > 0) {
+          setHasDraft(true);
+          setShowDraftBanner(true);
+        }
+      } catch (e) {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    }
+  }, []);
+
+  // Auto-save draft on changes (debounced)
+  useEffect(() => {
+    const saveDraft = () => {
+      const draft = {
+        quickNote,
+        selectedDog,
+        selectedLocation,
+        customLocation,
+        gameSeen,
+        gameHarvested,
+        photos,
+        huntDate: huntDate.toISOString(),
+        savedAt: Date.now(),
+      };
+
+      // Only save if there's meaningful content
+      if (quickNote || Object.keys(gameSeen).length > 0 || photos.length > 0) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        setHasDraft(true);
+      }
+    };
+
+    const timer = setTimeout(saveDraft, 1000);
+    return () => clearTimeout(timer);
+  }, [quickNote, selectedDog, selectedLocation, customLocation, gameSeen, gameHarvested, photos, huntDate]);
+
+  const restoreDraft = () => {
+    const savedDraft = localStorage.getItem(DRAFT_KEY);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setQuickNote(draft.quickNote || '');
+        if (draft.selectedDog) setSelectedDog(draft.selectedDog);
+        if (draft.selectedLocation) setSelectedLocation(draft.selectedLocation);
+        if (draft.customLocation) setCustomLocation(draft.customLocation);
+        if (draft.gameSeen) setGameSeen(draft.gameSeen);
+        if (draft.gameHarvested) setGameHarvested(draft.gameHarvested);
+        if (draft.photos) setPhotos(draft.photos);
+        if (draft.huntDate) setHuntDate(new Date(draft.huntDate));
+        setShowDraftBanner(false);
+        toast.success('Kladd gjenopprettet');
+      } catch (e) {
+        toast.error('Kunne ikke gjenopprette kladd');
+      }
+    }
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setHasDraft(false);
+    setShowDraftBanner(false);
+  };
 
   const handleInstallApp = async () => {
     if (!deferredPrompt) return;
@@ -453,15 +535,21 @@ export default function Dashboard() {
   }, [selectedDog, matchedTrack, lastAutoSyncTime]); // Inkluder lastAutoSyncTime for å sjekke persistert tid
 
   const handleQuickSave = async () => {
+    const errors: Record<string, string> = {};
+
     if (!selectedDog) {
-      toast.error('Velg en hund');
-      return;
+      errors.dog = 'Velg en hund';
     }
     if (!selectedLocation && !customLocation) {
-      toast.error('Velg et sted');
+      errors.location = 'Velg et sted';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
 
+    setValidationErrors({});
     setIsSavingQuickNote(true);
 
     try {
@@ -492,6 +580,9 @@ export default function Dashboard() {
       setGameSeen({});
       setGameHarvested({});
       setPhotos([]);
+
+      // Clear draft on successful save
+      clearDraft();
     } catch (error) {
       toast.error('Kunne ikke lagre');
     } finally {
@@ -515,13 +606,16 @@ export default function Dashboard() {
     });
   };
 
-  // Filter hunts by search and season
+  // Filter hunts by search, season, and filters
   const filteredHunts = hunts.filter((hunt) => {
     const matchesSearch =
       hunt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       hunt.location.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSeason = getHuntingSeason(hunt.date) === selectedSeason;
-    return matchesSearch && matchesSeason;
+    const matchesGame = !filterGame || hunt.game_type.includes(filterGame);
+    const matchesLocation = !filterLocation || hunt.location.name === filterLocation;
+    const matchesDog = !filterDog || hunt.dogs.includes(filterDog);
+    return matchesSearch && matchesSeason && matchesGame && matchesLocation && matchesDog;
   });
 
   const totalSeen = Object.values(gameSeen).reduce((a, b) => a + b, 0);
@@ -552,10 +646,42 @@ export default function Dashboard() {
 
   return (
     <div className={`space-y-6 ${showInstallButton ? 'pb-16' : ''}`}>
+      {/* Draft recovery banner */}
+      {showDraftBanner && (
+        <div className="bg-primary-700/20 border border-primary-700/40 rounded-lg p-3 flex items-center justify-between">
+          <div className="text-sm text-text-primary">
+            <span className="font-medium">Ulagret kladd funnet</span>
+            <span className="text-text-muted ml-2">Vil du gjenopprette?</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={restoreDraft}
+              className="text-xs bg-primary-700 text-white px-3 py-1 rounded hover:bg-primary-600 transition-colors"
+            >
+              Gjenopprett
+            </button>
+            <button
+              onClick={() => {
+                clearDraft();
+                setShowDraftBanner(false);
+              }}
+              className="text-xs text-text-muted hover:text-error transition-colors"
+            >
+              Forkast
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Registrer jakttur - HOVEDFOKUS */}
       <div className="p-5 bg-background-light rounded-xl">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-text-primary">Registrer jakttur</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-text-primary">Registrer jakttur</h1>
+            {hasDraft && !showDraftBanner && (
+              <span className="text-xs text-text-muted/50">Kladd lagret</span>
+            )}
+          </div>
           <div className="relative">
             <button
               onClick={() => setShowDatePicker(!showDatePicker)}
@@ -597,11 +723,21 @@ export default function Dashboard() {
         {/* Hund og Sted */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Hund</label>
+            <label className="text-xs text-text-muted mb-1 block">
+              Hund {!selectedDog && <span className="text-error">*</span>}
+            </label>
             <select
               value={selectedDog}
-              onChange={(e) => setSelectedDog(e.target.value)}
-              className="select text-sm"
+              onChange={(e) => {
+                setSelectedDog(e.target.value);
+                if (validationErrors.dog) {
+                  setValidationErrors((prev) => {
+                    const { dog, ...rest } = prev;
+                    return rest;
+                  });
+                }
+              }}
+              className={`select text-sm ${validationErrors.dog ? 'border-error ring-1 ring-error' : ''}`}
             >
               <option value="">Velg</option>
               {activeDogs.map((dog) => (
@@ -610,18 +746,31 @@ export default function Dashboard() {
                 </option>
               ))}
             </select>
+            {validationErrors.dog && (
+              <p className="text-xs text-error mt-1">{validationErrors.dog}</p>
+            )}
           </div>
 
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Sted</label>
+            <label className="text-xs text-text-muted mb-1 block">
+              Sted {!selectedLocation && !customLocation && <span className="text-error">*</span>}
+            </label>
             {selectedLocation === '_custom' ? (
               <div className="relative">
                 <input
                   type="text"
                   value={customLocation}
-                  onChange={(e) => setCustomLocation(e.target.value)}
+                  onChange={(e) => {
+                    setCustomLocation(e.target.value);
+                    if (validationErrors.location) {
+                      setValidationErrors((prev) => {
+                        const { location, ...rest } = prev;
+                        return rest;
+                      });
+                    }
+                  }}
                   placeholder="Skriv stedsnavn..."
-                  className="input text-sm pr-8"
+                  className={`input text-sm pr-8 ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
                   autoFocus
                 />
                 <button
@@ -644,8 +793,14 @@ export default function Dashboard() {
                   } else {
                     setSelectedLocation(e.target.value);
                   }
+                  if (validationErrors.location) {
+                    setValidationErrors((prev) => {
+                      const { location, ...rest } = prev;
+                      return rest;
+                    });
+                  }
                 }}
-                className="select text-sm"
+                className={`select text-sm ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
               >
                 <option value="">Velg</option>
                 {recentLocations.map((loc) => (
@@ -655,6 +810,9 @@ export default function Dashboard() {
                 ))}
                 <option value="_custom">+ Annet</option>
               </select>
+            )}
+            {validationErrors.location && (
+              <p className="text-xs text-error mt-1">{validationErrors.location}</p>
             )}
           </div>
         </div>
@@ -904,31 +1062,57 @@ export default function Dashboard() {
 
         {/* Filter */}
         {showFilters && (
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-background-lighter">
-            <select className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none">
-              <option value="">Vilt</option>
-              {gameTypes.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-            <select className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none">
-              <option value="">Sted</option>
-              {recentLocations.map((loc) => (
-                <option key={loc} value={loc}>
-                  {loc}
-                </option>
-              ))}
-            </select>
-            <select className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none">
-              <option value="">Hund</option>
-              {activeDogs.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
+          <div className="space-y-2 pt-2 border-t border-background-lighter">
+            <div className="grid grid-cols-3 gap-2">
+              <select
+                value={filterGame}
+                onChange={(e) => setFilterGame(e.target.value)}
+                className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none"
+              >
+                <option value="">Vilt</option>
+                {gameTypes.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterLocation}
+                onChange={(e) => setFilterLocation(e.target.value)}
+                className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none"
+              >
+                <option value="">Sted</option>
+                {recentLocations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterDog}
+                onChange={(e) => setFilterDog(e.target.value)}
+                className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none"
+              >
+                <option value="">Hund</option>
+                {activeDogs.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {(filterGame || filterLocation || filterDog) && (
+              <button
+                onClick={() => {
+                  setFilterGame('');
+                  setFilterLocation('');
+                  setFilterDog('');
+                }}
+                className="text-xs text-text-muted hover:text-error transition-colors"
+              >
+                Nullstill filtre
+              </button>
+            )}
           </div>
         )}
 
@@ -946,7 +1130,11 @@ export default function Dashboard() {
       {/* Jakttur-liste */}
       <div className="space-y-3">
         {isLoading ? (
-          <LoadingSpinner size="lg" />
+          <div className="space-y-3">
+            <HuntCardSkeleton />
+            <HuntCardSkeleton />
+            <HuntCardSkeleton />
+          </div>
         ) : filteredHunts.length === 0 ? (
           <div className="card p-8 text-center">
             <MapPin className="w-10 h-10 mx-auto text-text-muted mb-3" />
@@ -978,20 +1166,22 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4">
                   {/* Observert */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-text-muted">Sett</span>
-                    <div className="flex items-center gap-1">
+                    <span className="text-xs text-text-muted" id={`seen-label-${game.id}`}>Sett</span>
+                    <div className="flex items-center gap-1" role="group" aria-labelledby={`seen-label-${game.id}`}>
                       <button
                         onClick={() => updateGameCount(setGameSeen, game.id, -1)}
                         className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:text-text-primary flex items-center justify-center text-sm"
+                        aria-label={`Reduser antall ${game.name} observert`}
                       >
                         -
                       </button>
-                      <span className="w-8 text-center text-sm font-medium text-primary-400">
+                      <span className="w-8 text-center text-sm font-medium text-primary-400" aria-live="polite">
                         {seen}
                       </span>
                       <button
                         onClick={() => updateGameCount(setGameSeen, game.id, 1)}
                         className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:text-text-primary flex items-center justify-center text-sm"
+                        aria-label={`Øk antall ${game.name} observert`}
                       >
                         +
                       </button>
@@ -999,20 +1189,22 @@ export default function Dashboard() {
                   </div>
                   {/* Felt */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-text-muted">Felt</span>
-                    <div className="flex items-center gap-1">
+                    <span className="text-xs text-text-muted" id={`harvested-label-${game.id}`}>Felt</span>
+                    <div className="flex items-center gap-1" role="group" aria-labelledby={`harvested-label-${game.id}`}>
                       <button
                         onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
                         className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:text-text-primary flex items-center justify-center text-sm"
+                        aria-label={`Reduser antall ${game.name} felt`}
                       >
                         -
                       </button>
-                      <span className="w-8 text-center text-sm font-medium text-success">
+                      <span className="w-8 text-center text-sm font-medium text-success" aria-live="polite">
                         {harvested}
                       </span>
                       <button
                         onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
                         className="w-6 h-6 rounded bg-background-lighter text-text-muted hover:text-text-primary flex items-center justify-center text-sm"
+                        aria-label={`Øk antall ${game.name} felt`}
                       >
                         +
                       </button>

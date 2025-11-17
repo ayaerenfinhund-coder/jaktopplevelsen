@@ -11,6 +11,9 @@ import {
   Calendar,
   Target,
   Zap,
+  Lightbulb,
+  ThermometerSun,
+  Award,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -208,6 +211,78 @@ export default function DogStatistics() {
     {} as Record<string, { count: number; distance: number; duration: number }>
   );
 
+  // Smart insights calculations
+  const insights = {
+    // Best location by efficiency (distance per hour)
+    bestLocation: Object.entries(locationStats)
+      .map(([loc, stats]) => ({
+        location: loc,
+        efficiency: stats.distance / (stats.duration / 60),
+        count: stats.count,
+      }))
+      .sort((a, b) => b.efficiency - a.efficiency)[0],
+
+    // Optimal temperature range
+    optimalTemp: (() => {
+      const tempRanges = dogData.map((d) => ({
+        avgTemp: (d.temperature_start + d.temperature_end) / 2,
+        distance: d.distance_km,
+      }));
+      const avgOptimalTemp =
+        tempRanges.reduce((acc, t) => acc + t.avgTemp, 0) / tempRanges.length;
+      return Math.round(avgOptimalTemp);
+    })(),
+
+    // Best performance trend
+    performanceTrend: (() => {
+      if (dogData.length < 3) return 'stable';
+      const recent = dogData.slice(0, 3);
+      const older = dogData.slice(3, 6);
+      if (older.length === 0) return 'stable';
+
+      const recentAvg = recent.reduce((acc, d) => acc + d.distance_km, 0) / recent.length;
+      const olderAvg = older.reduce((acc, d) => acc + d.distance_km, 0) / older.length;
+
+      if (recentAvg > olderAvg * 1.1) return 'improving';
+      if (recentAvg < olderAvg * 0.9) return 'declining';
+      return 'stable';
+    })(),
+
+    // Most productive time (morning hunts have lower start temp)
+    bestTimeOfDay: (() => {
+      const morningHunts = dogData.filter((d) => d.temperature_start < 8);
+      const afternoonHunts = dogData.filter((d) => d.temperature_start >= 8);
+
+      const morningAvgDist =
+        morningHunts.length > 0
+          ? morningHunts.reduce((acc, d) => acc + d.distance_km, 0) / morningHunts.length
+          : 0;
+      const afternoonAvgDist =
+        afternoonHunts.length > 0
+          ? afternoonHunts.reduce((acc, d) => acc + d.distance_km, 0) / afternoonHunts.length
+          : 0;
+
+      return morningAvgDist > afternoonAvgDist ? 'morgen' : 'ettermiddag';
+    })(),
+
+    // Endurance rating
+    enduranceRating: (() => {
+      const avgDuration = totalStats.avg_duration;
+      if (avgDuration > 240) return 'Utmerket';
+      if (avgDuration > 180) return 'Veldig god';
+      if (avgDuration > 120) return 'God';
+      return 'Moderat';
+    })(),
+
+    // Recovery recommendation
+    daysSinceLastHunt: (() => {
+      if (dogData.length === 0) return 0;
+      const lastHunt = new Date(dogData[0].date);
+      const today = new Date();
+      return Math.floor((today.getTime() - lastHunt.getTime()) / (1000 * 60 * 60 * 24));
+    })(),
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-8">
       {/* Header - mobilvennlig */}
@@ -303,6 +378,101 @@ export default function DogStatistics() {
                   {totalStats.avg_distance.toFixed(1)} km
                 </p>
                 <p className="text-sm text-text-muted">Snitt per tur</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Smart Insights */}
+          <div className="bg-gradient-to-br from-primary-700/20 to-accent-500/10 rounded-xl p-4 border border-primary-700/30">
+            <h3 className="text-base font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-accent-400" />
+              Smarte innsikter
+            </h3>
+            <div className="space-y-4">
+              {/* Best location */}
+              {insights.bestLocation && (
+                <div className="bg-background/50 rounded-lg p-3">
+                  <div className="flex items-start gap-3">
+                    <Award className="w-5 h-5 text-primary-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-text-primary">Beste jaktområde</p>
+                      <p className="text-xs text-text-muted mt-1">
+                        <span className="font-semibold text-primary-400">{insights.bestLocation.location}</span> gir best resultat med{' '}
+                        {insights.bestLocation.efficiency.toFixed(1)} km/time effektivitet over{' '}
+                        {insights.bestLocation.count} turer
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Optimal conditions */}
+              <div className="bg-background/50 rounded-lg p-3">
+                <div className="flex items-start gap-3">
+                  <ThermometerSun className="w-5 h-5 text-accent-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Optimale forhold</p>
+                    <p className="text-xs text-text-muted mt-1">
+                      {dog.name} presterer best om <span className="font-semibold text-accent-400">{insights.bestTimeOfDay}en</span> ved ca.{' '}
+                      <span className="font-semibold text-accent-400">{insights.optimalTemp}°C</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance trend */}
+              <div className="bg-background/50 rounded-lg p-3">
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Ytelsesutvikling</p>
+                    <p className="text-xs text-text-muted mt-1">
+                      {insights.performanceTrend === 'improving' && (
+                        <>Ytelsen er <span className="font-semibold text-success">stigende</span> - {dog.name} går lengre distanser nå enn tidligere!</>
+                      )}
+                      {insights.performanceTrend === 'declining' && (
+                        <>Ytelsen er <span className="font-semibold text-warning">synkende</span> - vurder lengre hvileperioder</>
+                      )}
+                      {insights.performanceTrend === 'stable' && (
+                        <>Ytelsen er <span className="font-semibold text-primary-400">stabil</span> - jevn prestasjon over tid</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Endurance & Recovery */}
+              <div className="bg-background/50 rounded-lg p-3">
+                <div className="flex items-start gap-3">
+                  <Zap className="w-5 h-5 text-secondary-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Utholdenhet & Restitusjon</p>
+                    <p className="text-xs text-text-muted mt-1">
+                      Utholdenhetsrating: <span className="font-semibold text-secondary-400">{insights.enduranceRating}</span>.{' '}
+                      {insights.daysSinceLastHunt > 7 ? (
+                        <>Siste jakt var for {insights.daysSinceLastHunt} dager siden - {dog.name} er klar for felt!</>
+                      ) : insights.daysSinceLastHunt > 2 ? (
+                        <>God restitusjon med {insights.daysSinceLastHunt} dagers hvile</>
+                      ) : (
+                        <>Vurder {3 - insights.daysSinceLastHunt} dager til hvile for optimal ytelse</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommendation */}
+              <div className="mt-4 p-3 bg-primary-700/20 rounded-lg border border-primary-700/30">
+                <p className="text-xs text-text-primary">
+                  <span className="font-semibold">Anbefaling:</span>{' '}
+                  {insights.bestLocation && (
+                    <>
+                      Planlegg neste jakttur til <span className="text-primary-400 font-medium">{insights.bestLocation.location}</span> om{' '}
+                      <span className="text-accent-400 font-medium">{insights.bestTimeOfDay}en</span> når temperaturen er rundt{' '}
+                      <span className="text-accent-400 font-medium">{insights.optimalTemp}°C</span> for best mulig resultat.
+                    </>
+                  )}
+                </p>
               </div>
             </div>
           </div>

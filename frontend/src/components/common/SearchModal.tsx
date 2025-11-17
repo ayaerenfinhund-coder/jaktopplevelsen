@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, MapPin, Dog, Calendar } from 'lucide-react';
+import { Search, X, MapPin, Dog, Calendar, Eye, Target } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useAppStore } from '../../store/useAppStore';
+import { format } from 'date-fns';
+import { nb } from 'date-fns/locale';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -10,34 +13,44 @@ interface SearchModalProps {
 
 interface SearchResult {
   id: string;
-  type: 'hunt' | 'dog' | 'location';
+  type: 'hunt' | 'dog' | 'location' | 'game';
   title: string;
   subtitle: string;
   icon: typeof Search;
+  route: string;
 }
 
-// Mock search results
-const mockResults: SearchResult[] = [
+// Mock hunts data for search
+const mockHunts = [
   {
     id: '1',
-    type: 'hunt',
-    title: 'Morgenjakt ved Semsvannet',
-    subtitle: '10. november 2024 • 1 hund',
-    icon: Calendar,
+    title: 'Morgenjakt ved Storeberg',
+    date: '2024-11-10',
+    location: 'Storeberg',
+    dogs: ['Rolex'],
+    gameSeen: 3,
+    gameHarvested: 0,
+    notes: 'Rolex jobbet utmerket i terrenget rundt vannet',
   },
   {
     id: '2',
-    type: 'dog',
-    title: 'Rolex',
-    subtitle: 'Dachs • Aktiv',
-    icon: Dog,
+    title: 'Ettermiddagsjakt ved Tveiter',
+    date: '2024-11-08',
+    location: 'Tveiter',
+    dogs: ['Rolex'],
+    gameSeen: 3,
+    gameHarvested: 1,
+    notes: 'Godt vær og fin jakt',
   },
   {
     id: '3',
-    type: 'location',
-    title: 'Semsvannet',
-    subtitle: '24 jaktturer • 156 km totalt',
-    icon: MapPin,
+    title: 'Hanejakt Storeberg',
+    date: '2023-10-15',
+    location: 'Storeberg',
+    dogs: ['Rolex'],
+    gameSeen: 4,
+    gameHarvested: 1,
+    notes: 'God dag med Rolex',
   },
 ];
 
@@ -47,6 +60,93 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { dogs, recentLocations } = useAppStore();
+
+  // Build searchable items from store data
+  const searchableItems = useMemo(() => {
+    const items: SearchResult[] = [];
+
+    // Add hunts
+    mockHunts.forEach((hunt) => {
+      items.push({
+        id: `hunt-${hunt.id}`,
+        type: 'hunt',
+        title: hunt.title,
+        subtitle: `${format(new Date(hunt.date), 'd. MMMM yyyy', { locale: nb })} • ${hunt.location} • ${hunt.dogs.join(', ')}`,
+        icon: Calendar,
+        route: `/hunt/${hunt.id}`,
+      });
+
+      // Also add searchable notes
+      if (hunt.notes) {
+        items.push({
+          id: `hunt-notes-${hunt.id}`,
+          type: 'hunt',
+          title: hunt.title,
+          subtitle: `Notater: "${hunt.notes.substring(0, 50)}${hunt.notes.length > 50 ? '...' : ''}"`,
+          icon: Calendar,
+          route: `/hunt/${hunt.id}`,
+        });
+      }
+    });
+
+    // Add dogs
+    dogs.forEach((dog) => {
+      items.push({
+        id: `dog-${dog.id}`,
+        type: 'dog',
+        title: dog.name,
+        subtitle: `${dog.breed} • ${dog.is_active ? 'Aktiv' : 'Inaktiv'}${dog.garmin_collar_id ? ` • Garmin: ${dog.garmin_collar_id}` : ''}`,
+        icon: Dog,
+        route: '/dogs',
+      });
+    });
+
+    // Add locations with stats
+    const locationStats: Record<string, { count: number; distance: number }> = {};
+    mockHunts.forEach((hunt) => {
+      if (!locationStats[hunt.location]) {
+        locationStats[hunt.location] = { count: 0, distance: 0 };
+      }
+      locationStats[hunt.location].count++;
+    });
+
+    recentLocations.forEach((loc) => {
+      const stats = locationStats[loc] || { count: 0, distance: 0 };
+      items.push({
+        id: `location-${loc}`,
+        type: 'location',
+        title: loc,
+        subtitle: `${stats.count} jaktturer`,
+        icon: MapPin,
+        route: '/',
+      });
+    });
+
+    // Add game types as searchable items
+    const gameTypes = [
+      { id: 'roe_deer', name: 'Rådyr' },
+      { id: 'hare', name: 'Hare' },
+      { id: 'moose', name: 'Elg' },
+      { id: 'deer', name: 'Hjort' },
+      { id: 'grouse', name: 'Rype' },
+      { id: 'fox', name: 'Rev' },
+    ];
+
+    gameTypes.forEach((game) => {
+      const huntsWithGame = mockHunts.filter((h) => h.gameSeen > 0 || h.gameHarvested > 0);
+      items.push({
+        id: `game-${game.id}`,
+        type: 'game',
+        title: game.name,
+        subtitle: `Søk etter jaktturer med ${game.name.toLowerCase()}`,
+        icon: Target,
+        route: '/',
+      });
+    });
+
+    return items;
+  }, [dogs, recentLocations]);
 
   useEffect(() => {
     if (isOpen) {
@@ -89,14 +189,35 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   const handleSearch = (value: string) => {
     setQuery(value);
-    if (value.length > 0) {
-      // Filter mock results based on query
-      const filtered = mockResults.filter(
-        (r) =>
-          r.title.toLowerCase().includes(value.toLowerCase()) ||
-          r.subtitle.toLowerCase().includes(value.toLowerCase())
-      );
-      setResults(filtered);
+    if (value.length > 1) {
+      // Search through all items
+      const searchTerms = value.toLowerCase().split(' ').filter((t) => t.length > 0);
+
+      const filtered = searchableItems.filter((item) => {
+        const searchText = `${item.title} ${item.subtitle}`.toLowerCase();
+        return searchTerms.every((term) => searchText.includes(term));
+      });
+
+      // Remove duplicates (same route)
+      const uniqueResults = filtered.reduce((acc, item) => {
+        const existingIndex = acc.findIndex((r) => r.route === item.route && r.type === item.type);
+        if (existingIndex === -1) {
+          acc.push(item);
+        }
+        return acc;
+      }, [] as SearchResult[]);
+
+      // Sort by relevance (exact title match first, then type priority)
+      uniqueResults.sort((a, b) => {
+        const aExact = a.title.toLowerCase().includes(value.toLowerCase()) ? 0 : 1;
+        const bExact = b.title.toLowerCase().includes(value.toLowerCase()) ? 0 : 1;
+        if (aExact !== bExact) return aExact - bExact;
+
+        const typePriority = { hunt: 0, dog: 1, location: 2, game: 3 };
+        return typePriority[a.type] - typePriority[b.type];
+      });
+
+      setResults(uniqueResults.slice(0, 10));
       setSelectedIndex(0);
     } else {
       setResults([]);
@@ -104,17 +225,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   };
 
   const handleSelect = (result: SearchResult) => {
-    switch (result.type) {
-      case 'hunt':
-        navigate(`/hunt/${result.id}`);
-        break;
-      case 'dog':
-        navigate('/dogs');
-        break;
-      case 'location':
-        navigate('/');
-        break;
-    }
+    navigate(result.route);
     onClose();
   };
 
@@ -187,7 +298,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         </div>
                       </div>
                       <span className="badge-secondary text-xs">
-                        {result.type === 'hunt' ? 'jakttur' : result.type === 'dog' ? 'hund' : 'sted'}
+                        {result.type === 'hunt' ? 'jakttur' : result.type === 'dog' ? 'hund' : result.type === 'location' ? 'sted' : 'vilt'}
                       </span>
                     </button>
                   </li>
