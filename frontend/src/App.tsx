@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import Layout from './components/layout/Layout';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import { useAuth } from './hooks/useAuth';
 
 // Lazy load pages for code splitting
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -15,8 +16,15 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const PublicHuntView = lazy(() => import('./pages/PublicHuntView'));
 
 function App() {
-  // For demo purposes, we'll assume user is logged in
-  const isAuthenticated = true;
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <Suspense
@@ -27,16 +35,15 @@ function App() {
       }
     >
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/" replace /> : <Login />}
+        />
         <Route path="/share/:shareId" element={<PublicHuntView />} />
         <Route
           path="/"
           element={
-            isAuthenticated ? (
-              <Layout />
-            ) : (
-              <Navigate to="/login" replace />
-            )
+            user ? <Layout /> : <Navigate to="/login" replace />
           }
         >
           <Route index element={<Dashboard />} />

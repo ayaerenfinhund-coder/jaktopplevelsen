@@ -183,6 +183,20 @@ function generateHeatmapData(tracks: Track[]): { lat: number; lng: number; inten
 
 // Kartverket WMTS - samme som norgeskart.no bruker
 const MAP_LAYERS = {
+  // Mapbox Outdoors - beste for jakt og friluftsliv
+  mapboxOutdoors: {
+    name: 'Mapbox Outdoors',
+    url: `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/tiles/{z}/{x}/{y}?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`,
+    attribution: '© <a href="https://mapbox.com">Mapbox</a>',
+    maxZoom: 22,
+  },
+  // Mapbox Satellite med gatenavn
+  mapboxSatellite: {
+    name: 'Mapbox Satellitt',
+    url: `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`,
+    attribution: '© <a href="https://mapbox.com">Mapbox</a>',
+    maxZoom: 22,
+  },
   // Norgeskart Topografisk - hovedkart fra Kartverket
   topo: {
     name: 'Norgeskart Topo',
@@ -287,7 +301,23 @@ export default function HuntMap({
       >
         {/* Kartverket WMTS - norgeskart.no sine kartlag */}
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name={MAP_LAYERS.topo.name}>
+          <LayersControl.BaseLayer checked name={MAP_LAYERS.mapboxOutdoors.name}>
+            <TileLayer
+              url={MAP_LAYERS.mapboxOutdoors.url}
+              attribution={MAP_LAYERS.mapboxOutdoors.attribution}
+              maxZoom={MAP_LAYERS.mapboxOutdoors.maxZoom}
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name={MAP_LAYERS.mapboxSatellite.name}>
+            <TileLayer
+              url={MAP_LAYERS.mapboxSatellite.url}
+              attribution={MAP_LAYERS.mapboxSatellite.attribution}
+              maxZoom={MAP_LAYERS.mapboxSatellite.maxZoom}
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name={MAP_LAYERS.topo.name}>
             <TileLayer
               url={MAP_LAYERS.topo.url}
               attribution={MAP_LAYERS.topo.attribution}
