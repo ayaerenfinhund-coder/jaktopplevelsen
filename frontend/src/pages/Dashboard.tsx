@@ -578,7 +578,7 @@ export default function Dashboard() {
                     setHuntDate(new Date(e.target.value));
                     setShowDatePicker(false);
                   }}
-                  className="input text-sm"
+                  className="input text-sm pr-3"
                 />
                 <button
                   onClick={() => {
@@ -1049,15 +1049,14 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      {/* PWA Install Button - Fixed at bottom, minimalist */}
+      {/* PWA Install Button - Small text at bottom */}
       {showInstallButton && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background-light/95 backdrop-blur-sm border-t border-background-lighter p-3 z-40">
+        <div className="text-center pt-4">
           <button
             onClick={handleInstallApp}
-            className="w-full flex items-center justify-center gap-2 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+            className="text-xs text-text-muted/60 hover:text-primary-400 transition-colors"
           >
-            <Download className="w-4 h-4" />
-            <span>Installer som app</span>
+            Installer som app
           </button>
         </div>
       )}
